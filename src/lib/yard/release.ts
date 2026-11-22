@@ -6,6 +6,8 @@ import { type Stocks } from "./power.ts";
 /** Five grams per square meter is optical depth 1. An order of magnitude, not a retrieval. */
 export const GRAMS_PER_M2_PER_TAU = 5;
 export const LOFT_KWH = 200_000;
+/** 15 K cap at 25 K per optical depth. Past this the cell does not get warmer. */
+export const TAU_CAP_MILLI = 600;
 
 export function cellAreaM2(latDeg: number): number {
   const dLat = ((5 * Math.PI) / 180) * RADIUS_M;
@@ -45,6 +47,9 @@ export function commitRelease(
   }
   if (aStocks.batteryKwh < LOFT_KWH || bStocks.batteryKwh < LOFT_KWH) {
     return { ...same, reason: `battery cannot pay ${LOFT_KWH} kWh` };
+  }
+  if (a.tauAerMilli[index] + tauMilli > TAU_CAP_MILLI || b.tauAerMilli[index] + tauMilli > TAU_CAP_MILLI) {
+    return { ...same, reason: "the warming cap is already met" };
   }
   if (tauMilli <= 0) return { ...same, reason: "that mass does not change the optical depth" };
   const spend = (stocks: Stocks): Stocks => ({

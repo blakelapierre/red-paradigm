@@ -367,7 +367,7 @@ export function Council() {
               </button>
             </div>
             <p className="text-xs text-muted">
-              Lofting spends 5,000,000 kg of fines and 200,000 kWh. Five grams per square meter is optical depth 1, so one batch is a thin veil over this climate cell, not τ 0.80. It does warm the cell. It does not move the CO₂ bar.
+              Lofting spends 5,000,000 kg of fines and 200,000 kWh. Five grams per square meter is optical depth 1, so one batch is a thin veil over this climate cell, not τ 0.80. It does warm the cell, until τ 0.60, where 15 K is already the cap. It does not move the CO₂ bar.
             </p>
           </div>
 

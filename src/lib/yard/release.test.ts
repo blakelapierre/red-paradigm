@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createWorld, inspect, siteIndex, stateHash } from "../climate/model.ts";
+import { addAerosol, createWorld, inspect, siteIndex, stateHash } from "../climate/model.ts";
 import { MILL_FINES_KG } from "./mill.ts";
 import { createStocks, type Stocks } from "./power.ts";
-import { commitRelease, tauMilliFromFines } from "./release.ts";
+import { TAU_CAP_MILLI, commitRelease, tauMilliFromFines } from "./release.ts";
 
 function funded(): Stocks {
   return { ...createStocks(), batteryKwh: 1_000_000, finesKg: MILL_FINES_KG };
@@ -35,3 +35,18 @@ test("a release without fines changes nothing", () => {
   assert.equal(stateHash(missed.a), hash);
   assert.equal(missed.aStocks.batteryKwh, stocks.batteryKwh);
 });
+
+test("a loft that would pass the warming cap is refused", () => {
+  const index = siteIndex("cradle");
+  const world = addAerosol(createWorld(), index, TAU_CAP_MILLI - 5);
+  const stocks = funded();
+  const hash = stateHash(world);
+  const missed = commitRelease(world, world, stocks, stocks, index, inspect(world, index).lat);
+  assert.equal(missed.accepted, false);
+  assert.match(missed.reason, /warming cap/);
+  assert.equal(missed.aStocks.finesKg, stocks.finesKg);
+  assert.equal(missed.aStocks.batteryKwh, stocks.batteryKwh);
+  assert.equal(stateHash(missed.a), hash);
+  assert.equal(stateHash(missed.b), hash);
+});
+
