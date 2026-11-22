@@ -71,9 +71,17 @@ function fresh(): Pair {
 }
 
 function closeBoth(p: Pair): Pair {
-  const canon = closeSol(p.canon, p.canonStocks);
-  const witness = closeSol(p.witness, p.witnessStocks);
-  return { ...p, canon: canon.world, witness: witness.world, canonStocks: canon.stocks, witnessStocks: witness.stocks };
+  const canon = closeSol(p.canon, p.canonStocks, p.canonCrust);
+  const witness = closeSol(p.witness, p.witnessStocks, p.witnessCrust);
+  return {
+    ...p,
+    canon: canon.world,
+    witness: witness.world,
+    canonStocks: canon.stocks,
+    witnessStocks: witness.stocks,
+    canonCrust: canon.crust,
+    witnessCrust: witness.crust,
+  };
 }
 
 function formatKg(kg: bigint): string {
@@ -697,7 +705,7 @@ function Former({
         ice {formatKg(stocks.iceKg)} · water {formatKg(stocks.waterKg)} · O2 {formatKg(stocks.o2Kg)} · H2 {formatKg(stocks.h2Kg)} · CH4 {formatKg(stocks.ch4Kg)} · toxin {stocks.toxinMilli} · debt {stocks.debt ? "owed" : "clear"}
       </p>
       <p className="mt-2 text-xs text-muted">
-        Each sol takes 1 kg of oxygen and 3 kg of water. If either is short, the sol is owed and neither is spent.
+        Each sol takes 1 kg of oxygen and 3 kg of water. If either is short, the sol is owed and neither is spent. A roof costs 10,000 kWh that same sol. If the battery cannot pay, every roof comes down.
       </p>
       <p className="mt-2 text-xs text-muted">
         One kilometer, two meters down, 3,000,000,000 kg at 1,500 kg/m³. The cut costs {formatKwh(CUT_KWH)}. A mill batch is 100,000,000 kg of spoil and 1,000,000 kWh, and five percent of that mass is fines. Paint is 50,000 kg of fines on this kilometer, albedo 0.10. This cell's albedo stays {(climateAlbedoMilli / 1000).toFixed(3)}. The coat is {paintOf(canon, at.ix, at.iy) > 0 ? "on" : "not on"} this kilometer. Floor pressure moves by {delta.toFixed(2)} Pa.

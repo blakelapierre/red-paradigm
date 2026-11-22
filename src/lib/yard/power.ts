@@ -2,6 +2,7 @@ import { PANEL_M2 } from "../climate/constants.ts";
 import { inspect, siteIndex, step, type World } from "../climate/model.ts";
 import { commitDig, type Crust } from "../crust/crust.ts";
 import { drawCrew } from "./crew.ts";
+import { keepRoof } from "./upkeep.ts";
 
 /** One crust cell of panels at the Low Cradle. Not the 100 m² survey coupon. */
 export const ARRAY_M2 = 1_000_000;
@@ -72,10 +73,16 @@ export function stocksBytes(stocks: Stocks): Uint8Array {
   return bytes;
 }
 
-/** Bank this sol's array, then the crew draws, then the sol advances. */
-export function closeSol(world: World, stocks: Stocks, index = CRADLE): { world: World; stocks: Stocks } {
+/** Bank this sol's array, draw the crew, then pay for any roof. */
+export function closeSol(
+  world: World,
+  stocks: Stocks,
+  crust: Crust,
+  index = CRADLE,
+): { world: World; stocks: Stocks; crust: Crust } {
   const gain = arrayKwh(world, index);
-  return { world: step(world, { fileStorm: true }), stocks: drawCrew(credit(stocks, gain)) };
+  const kept = keepRoof(crust, drawCrew(credit(stocks, gain)));
+  return { world: step(world, { fileStorm: true }), stocks: kept.stocks, crust: kept.crust };
 }
 
 export function commitPoweredCut(

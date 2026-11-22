@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createWorld } from "../climate/model.ts";
+import { createCrust } from "../crust/crust.ts";
 import { drawCrew } from "./crew.ts";
 import { arrayKwh, closeSol, createStocks } from "./power.ts";
 
@@ -19,10 +20,10 @@ test("the crew drinks and breathes, or the sol is owed", () => {
 test("closing a sol draws the crew after the array is banked", () => {
   const world = createWorld();
   const shown = arrayKwh(world);
-  const hungry = closeSol(world, createStocks());
+  const hungry = closeSol(world, createStocks(), createCrust());
   assert.equal(hungry.stocks.batteryKwh, shown);
   assert.equal(hungry.stocks.debt, 1);
-  const fed = closeSol(world, { ...createStocks(), o2Kg: 1n, waterKg: 3n });
+  const fed = closeSol(world, { ...createStocks(), o2Kg: 1n, waterKg: 3n }, createCrust());
   assert.equal(fed.stocks.debt, 0);
   assert.equal(fed.stocks.o2Kg, 0n);
   assert.equal(fed.stocks.waterKg, 0n);

@@ -27,7 +27,7 @@ test("a storm sol pays tens of thousands of kWh, not a cut", () => {
 test("closing a sol banks the array the board was showing", () => {
   const world = createWorld();
   const shown = arrayKwh(world);
-  const closed = closeSol(world, createStocks());
+  const closed = closeSol(world, createStocks(), createCrust());
   assert.equal(closed.world.sol, 1);
   assert.equal(closed.stocks.batteryKwh, shown);
 });
