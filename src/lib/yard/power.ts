@@ -1,8 +1,9 @@
-import { PANEL_M2 } from "../climate/constants.ts";
-import { inspect, siteIndex, step, type World } from "../climate/model.ts";
+import { PANEL_M2, cellLat, latIndexOf } from "../climate/constants.ts";
+import { inspect, siteIndex, step, stormTau, type World } from "../climate/model.ts";
 import { commitDig, type Crust } from "../crust/crust.ts";
-import { drawCrew } from "./crew.ts";
 import { grow } from "./biomass.ts";
+import { collectSalvage } from "./collector.ts";
+import { drawCrew } from "./crew.ts";
 import { keepRoof } from "./upkeep.ts";
 
 /** One crust cell of panels at the Low Cradle. Not the 100 m² survey coupon. */
@@ -25,6 +26,7 @@ export type Stocks = {
   toxinMilli: number;
   debt: number;
   biomassG: number;
+  collector: number;
 };
 
 export function createStocks(): Stocks {
@@ -40,6 +42,7 @@ export function createStocks(): Stocks {
     toxinMilli: 0,
     debt: 0,
     biomassG: 0,
+    collector: 0,
   };
 }
 
@@ -54,7 +57,7 @@ export function credit(stocks: Stocks, kwh: number): Stocks {
 }
 
 export function stocksBytes(stocks: Stocks): Uint8Array {
-  const bytes = new Uint8Array(72);
+  const bytes = new Uint8Array(76);
   const view = new DataView(bytes.buffer);
   bytes.set([0x50, 0x57, 0x52, 0x31]);
   view.setUint32(4, stocks.batteryKwh);
@@ -74,10 +77,11 @@ export function stocksBytes(stocks: Stocks): Uint8Array {
   view.setUint32(60, Number(stocks.ch4Kg & 0xffffffffn));
   view.setUint32(64, stocks.debt >>> 0);
   view.setUint32(68, stocks.biomassG >>> 0);
+  view.setUint32(72, stocks.collector >>> 0);
   return bytes;
 }
 
-/** Bank the array, draw the crew, pay the roof, then grow one gram if the vessel is still up. */
+/** Bank the array, salvage a stripping sol, draw the crew, pay the roof, then grow. */
 export function closeSol(
   world: World,
   stocks: Stocks,
@@ -85,8 +89,15 @@ export function closeSol(
   index = CRADLE,
 ): { world: World; stocks: Stocks; crust: Crust } {
   const gain = arrayKwh(world, index);
-  const kept = keepRoof(crust, drawCrew(credit(stocks, gain)));
-  return { world: step(world, { fileStorm: true }), stocks: grow(kept.crust, kept.stocks), crust: kept.crust };
+  const beforeTau = world.tauAerMilli[index];
+  const next = step(world, { fileStorm: true });
+  let nextStocks = credit(stocks, gain);
+  if (stormTau(next.sol, next.storm) > 0.05) {
+    const lost = beforeTau - next.tauAerMilli[index];
+    nextStocks = collectSalvage(nextStocks, lost, cellLat(latIndexOf(index)));
+  }
+  const kept = keepRoof(crust, drawCrew(nextStocks));
+  return { world: next, stocks: grow(kept.crust, kept.stocks), crust: kept.crust };
 }
 
 export function commitPoweredCut(
