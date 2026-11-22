@@ -16,7 +16,7 @@ export const CUT_KG = M3_PER_CM * BigInt(-DIG_DZ_CM) * BigInt(BULK_KG_PER_M3);
 /** The yard at campaign start holds one cut and not two. */
 export const YARD_KG = CUT_KG;
 
-export type Override = { ix: number; iy: number; dzCm: number };
+export type Override = { ix: number; iy: number; dzCm: number; albedoMilli: number };
 
 export type Crust = {
   seed: number;
@@ -88,7 +88,7 @@ function writeU64(view: DataView, offset: number, n: bigint): void {
 /** SHA-256 over seed, the cell being edited, and every sparse override. Stand-in for the BLAKE3 op hash. */
 export function beforeHash(crust: Crust, ix: number, iy: number): string {
   const n = crust.overrides.length;
-  const bytes = new Uint8Array(4 + 4 + 4 + 4 + 4 + n * 12);
+  const bytes = new Uint8Array(4 + 4 + 4 + 4 + 4 + n * 16);
   const view = new DataView(bytes.buffer);
   bytes.set([0x50, 0x49, 0x54, 0x31]);
   writeU32(view, 4, crust.seed >>> 0);
@@ -96,17 +96,18 @@ export function beforeHash(crust: Crust, ix: number, iy: number): string {
   writeI32(view, 12, iy);
   writeU32(view, 16, n);
   crust.overrides.forEach((row, i) => {
-    const at = 20 + i * 12;
+    const at = 20 + i * 16;
     writeI32(view, at, row.ix);
     writeI32(view, at + 4, row.iy);
     writeI32(view, at + 8, row.dzCm);
+    writeI32(view, at + 12, row.albedoMilli);
   });
   return toHex(sha256(bytes));
 }
 
 export function crustBytes(crust: Crust): Uint8Array {
   const n = crust.overrides.length;
-  const bytes = new Uint8Array(4 + 4 + 8 + 8 + 4 + n * 12);
+  const bytes = new Uint8Array(4 + 4 + 8 + 8 + 4 + n * 16);
   const view = new DataView(bytes.buffer);
   bytes.set([0x43, 0x52, 0x53, 0x54]);
   writeU32(view, 4, crust.seed >>> 0);
@@ -114,10 +115,11 @@ export function crustBytes(crust: Crust): Uint8Array {
   writeU64(view, 16, crust.spoilKg);
   writeU32(view, 24, n);
   crust.overrides.forEach((row, i) => {
-    const at = 28 + i * 12;
+    const at = 28 + i * 16;
     writeI32(view, at, row.ix);
     writeI32(view, at + 4, row.iy);
     writeI32(view, at + 8, row.dzCm);
+    writeI32(view, at + 12, row.albedoMilli);
   });
   return bytes;
 }
@@ -147,11 +149,28 @@ export function commitDig(
   return { a: left.crust, b: right.crust, accepted: true, reason: left.reason };
 }
 
+function withPaint(rows: readonly Override[], ix: number, iy: number, albedoMilli: number): Override[] {
+  const next = rows.map((row) => ({ ...row }));
+  const index = next.findIndex((row) => row.ix === ix && row.iy === iy);
+  if (index >= 0) next[index] = { ...next[index], albedoMilli };
+  else next.push({ ix, iy, dzCm: 0, albedoMilli });
+  next.sort((a, b) => a.iy - b.iy || a.ix - b.ix);
+  return next;
+}
+
+export function paintOf(crust: Crust, ix: number, iy: number): number {
+  return crust.overrides.find((row) => row.ix === ix && row.iy === iy)?.albedoMilli ?? 0;
+}
+
+export function paintCell(crust: Crust, ix: number, iy: number, albedoMilli: number): Crust {
+  return { ...crust, overrides: withPaint(crust.overrides, ix, iy, albedoMilli) };
+}
+
 function withOverride(rows: readonly Override[], ix: number, iy: number, dzCm: number): Override[] {
   const next = rows.map((row) => ({ ...row }));
   const index = next.findIndex((row) => row.ix === ix && row.iy === iy);
-  if (index >= 0) next[index] = { ix, iy, dzCm: next[index].dzCm + dzCm };
-  else next.push({ ix, iy, dzCm });
+  if (index >= 0) next[index] = { ...next[index], dzCm: next[index].dzCm + dzCm };
+  else next.push({ ix, iy, dzCm, albedoMilli: 0 });
   next.sort((a, b) => a.iy - b.iy || a.ix - b.ix);
   return next;
 }

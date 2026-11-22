@@ -26,10 +26,12 @@ import {
   crustHash,
   floorM,
   overrideAt,
+  paintOf,
   type Crust,
 } from "@/lib/crust/crust";
 import { turnHash } from "@/lib/turn";
 import { commitMill } from "@/lib/yard/mill";
+import { commitPaint } from "@/lib/yard/paint";
 import { commitRelease } from "@/lib/yard/release";
 import {
   CUT_KWH,
@@ -387,6 +389,20 @@ export function Council() {
                 witnessStocks: milled.bStocks,
               }));
             }}
+            onPaint={() => {
+              const at = cellOf(view.lat, view.lon);
+              const painted = commitPaint(pair.canonCrust, pair.witnessCrust, pair.canonStocks, pair.witnessStocks, at.ix, at.iy);
+              setCanonCut({ accepted: painted.accepted, reason: painted.reason });
+              setWitnessCut({ accepted: painted.accepted, reason: painted.reason });
+              setPair((p) => ({
+                ...p,
+                canonCrust: painted.a,
+                witnessCrust: painted.b,
+                canonStocks: painted.aStocks,
+                witnessStocks: painted.bStocks,
+              }));
+            }}
+            climateAlbedoMilli={world.albedoMilli[selected]}
           />
 
           <section className="rounded-sm border border-line bg-surface p-3">
@@ -500,6 +516,8 @@ function Former({
   witnessCut,
   onDig,
   onMill,
+  onPaint,
+  climateAlbedoMilli,
 }: {
   seedZm: number;
   lat: number;
@@ -512,6 +530,8 @@ function Former({
   witnessCut: CutNote | null;
   onDig: () => void;
   onMill: () => void;
+  onPaint: () => void;
+  climateAlbedoMilli: number;
 }) {
   const at = cellOf(lat, lon);
   const dz = overrideAt(canon, at.ix, at.iy);
@@ -553,8 +573,11 @@ function Former({
           Mill a batch
         </button>
       </div>
+      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onPaint}>
+        Paint this kilometer
+      </button>
       <p className="mt-2 text-xs text-muted">
-        One kilometer, two meters down, 3,000,000,000 kg at 1,500 kg/m³. The cut costs {formatKwh(CUT_KWH)}. A mill batch is 100,000,000 kg of spoil and 1,000,000 kWh, and five percent of that mass is fines. Floor pressure moves by {delta.toFixed(2)} Pa. Both clients take the order, or neither does.
+        One kilometer, two meters down, 3,000,000,000 kg at 1,500 kg/m³. The cut costs {formatKwh(CUT_KWH)}. A mill batch is 100,000,000 kg of spoil and 1,000,000 kWh, and five percent of that mass is fines. Paint is 50,000 kg of fines on this kilometer, albedo 0.10. This cell's albedo stays {(climateAlbedoMilli / 1000).toFixed(3)}. The coat is {paintOf(canon, at.ix, at.iy) > 0 ? "on" : "not on"} this kilometer. Floor pressure moves by {delta.toFixed(2)} Pa.
       </p>
       <p className={`mt-2 text-xs ${canonCut?.accepted ? "text-frost" : "text-muted"}`}>
         Order: {canonCut ? canonCut.reason : "no cut yet"}
