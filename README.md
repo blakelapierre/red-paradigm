@@ -31,6 +31,7 @@ The council map is a climate tick and one former, not the whole game.
 - One kilopower. 10 kW for 24 hours is 240 kWh a sol, added after the array and not scaled by dust or panel health. It starts once, for both clients.
 - Open methane. One percent leaves each sol, and at least one kilogram when the tank is under 100 kg. A standing roof holds the tank. The air mass does not move.
 - Vessel heat. 10,000 kWh raises the inside by 1 K, up to 40 K above the yard. There is no heat without a roof. The climate cell does not move.
+- A condenser. 50 kWh takes 1 kg of water from the column over one kilometer, about 10,000 kg at 10 grams per square meter. That figure is an order of magnitude. At 10,000 kg the order refuses. The air mass does not move, and this board does not invent a wind to refill the column.
 - One turn hash over the climate record, the crust record, and the stocks. They stay together. The hash does not split.
 
 `node_modules` is not in the repo. Install, then:

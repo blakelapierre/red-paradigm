@@ -34,6 +34,7 @@ export type Stocks = {
   brineKg: bigint;
   reactor: number;
   cabinRiseK: number;
+  drawnKg: number;
 };
 
 export function createStocks(): Stocks {
@@ -54,6 +55,7 @@ export function createStocks(): Stocks {
     brineKg: 0n,
     reactor: 0,
     cabinRiseK: 0,
+    drawnKg: 0,
   };
 }
 
@@ -68,7 +70,7 @@ export function credit(stocks: Stocks, kwh: number): Stocks {
 }
 
 export function stocksBytes(stocks: Stocks): Uint8Array {
-  const bytes = new Uint8Array(96);
+  const bytes = new Uint8Array(100);
   const view = new DataView(bytes.buffer);
   bytes.set([0x50, 0x57, 0x52, 0x31]);
   view.setUint32(4, stocks.batteryKwh);
@@ -94,6 +96,7 @@ export function stocksBytes(stocks: Stocks): Uint8Array {
   view.setUint32(84, Number(stocks.brineKg & 0xffffffffn));
   view.setUint32(88, stocks.reactor >>> 0);
   view.setUint32(92, stocks.cabinRiseK >>> 0);
+  view.setUint32(96, stocks.drawnKg >>> 0);
   return bytes;
 }
 
