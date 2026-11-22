@@ -5,6 +5,7 @@ import { grow } from "./biomass.ts";
 import { collectSalvage } from "./collector.ts";
 import { drawCrew } from "./crew.ts";
 import { abrade, scaleArray } from "./health.ts";
+import { KILOPOWER_KWH } from "./kilopower.ts";
 import { keepRoof } from "./upkeep.ts";
 
 /** One crust cell of panels at the Low Cradle. Not the 100 m² survey coupon. */
@@ -30,6 +31,7 @@ export type Stocks = {
   collector: number;
   healthMilli: number;
   brineKg: bigint;
+  reactor: number;
 };
 
 export function createStocks(): Stocks {
@@ -48,6 +50,7 @@ export function createStocks(): Stocks {
     collector: 0,
     healthMilli: 1000,
     brineKg: 0n,
+    reactor: 0,
   };
 }
 
@@ -62,7 +65,7 @@ export function credit(stocks: Stocks, kwh: number): Stocks {
 }
 
 export function stocksBytes(stocks: Stocks): Uint8Array {
-  const bytes = new Uint8Array(88);
+  const bytes = new Uint8Array(92);
   const view = new DataView(bytes.buffer);
   bytes.set([0x50, 0x57, 0x52, 0x31]);
   view.setUint32(4, stocks.batteryKwh);
@@ -86,6 +89,7 @@ export function stocksBytes(stocks: Stocks): Uint8Array {
   view.setUint32(76, stocks.healthMilli >>> 0);
   view.setUint32(80, Number((stocks.brineKg >> 32n) & 0xffffffffn));
   view.setUint32(84, Number(stocks.brineKg & 0xffffffffn));
+  view.setUint32(88, stocks.reactor >>> 0);
   return bytes;
 }
 
@@ -100,6 +104,7 @@ export function closeSol(
   const beforeTau = world.tauAerMilli[index];
   const next = step(world, { fileStorm: true });
   let nextStocks = credit(stocks, gain);
+  if (nextStocks.reactor) nextStocks = credit(nextStocks, KILOPOWER_KWH);
   nextStocks = abrade(nextStocks, stormTau(next.sol, next.storm) > 0.05);
   if (stormTau(next.sol, next.storm) > 0.05) {
     const lost = beforeTau - next.tauAerMilli[index];
