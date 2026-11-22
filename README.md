@@ -21,6 +21,7 @@ The council map is a climate tick and one former, not the whole game.
 - Burn 16 kg of methane with 64 kg of oxygen. Electricity is 8 kWh per kilogram of methane, 128 kWh, plus 36 kg of water back.
 - Wash the tanks. 100 kg of water and 20 kWh clear toxin 1000. A clean tank refuses the wash.
 - Roof one kilometer. 50,000 kg of fines and 100,000 kWh. Inside the vessel is 101,325 Pa. The climate cell's pressure does not move.
+- One road. 20,000 kg of fines on one kilometer. The climate cell does not move.
 - One turn hash over the climate record, the crust record, and the stocks. They stay together. The hash does not split.
 
 `node_modules` is not in the repo. Install, then:

@@ -31,6 +31,7 @@ import {
 } from "@/lib/crust/crust";
 import { turnHash } from "@/lib/turn";
 import { commitRoof } from "@/lib/yard/roof";
+import { commitRoad } from "@/lib/yard/road";
 import { commitWash } from "@/lib/yard/wash";
 import { commitBurn } from "@/lib/yard/burn";
 import { commitSabatier } from "@/lib/yard/sabatier";
@@ -451,6 +452,19 @@ export function Council() {
                 witnessStocks: roofed.bStocks,
               }));
             }}
+            onRoad={() => {
+              const at = cellOf(view.lat, view.lon);
+              const laid = commitRoad(pair.canonCrust, pair.witnessCrust, pair.canonStocks, pair.witnessStocks, at.ix, at.iy);
+              setCanonCut({ accepted: laid.accepted, reason: laid.reason });
+              setWitnessCut({ accepted: laid.accepted, reason: laid.reason });
+              setPair((p) => ({
+                ...p,
+                canonCrust: laid.a,
+                witnessCrust: laid.b,
+                canonStocks: laid.aStocks,
+                witnessStocks: laid.bStocks,
+              }));
+            }}
             climateAlbedoMilli={world.albedoMilli[selected]}
           />
 
@@ -530,7 +544,7 @@ export function Council() {
             <HashRow label="Climate" a={hashA} b={hashB} />
             <HashRow label="Crust" a={crustHash(pair.canonCrust)} b={crustHash(pair.witnessCrust)} />
             <p className="mt-2 text-xs text-muted">
-              The turn hash is the climate record, the crust record, and the battery. Both clients take the same log, so the halves do not split.
+              The turn hash is the climate record, the crust record, and the stocks. Both clients take the same log, so the halves do not split.
             </p>
           </section>
         </aside>
@@ -572,6 +586,7 @@ function Former({
   onBurn,
   onWash,
   onRoof,
+  onRoad,
   climateAlbedoMilli,
 }: {
   seedZm: number;
@@ -592,6 +607,7 @@ function Former({
   onBurn: () => void;
   onWash: () => void;
   onRoof: () => void;
+  onRoad: () => void;
   climateAlbedoMilli: number;
 }) {
   const at = cellOf(lat, lon);
@@ -654,6 +670,9 @@ function Former({
       </button>
       <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onRoof}>
         Roof this kilometer
+      </button>
+      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onRoad}>
+        Lay a road
       </button>
       <p className="mt-2 font-mono text-xs text-muted">
         ice {formatKg(stocks.iceKg)} · water {formatKg(stocks.waterKg)} · O2 {formatKg(stocks.o2Kg)} · H2 {formatKg(stocks.h2Kg)} · CH4 {formatKg(stocks.ch4Kg)} · toxin {stocks.toxinMilli}
