@@ -13,6 +13,7 @@ import {
   beforeHash,
   cellCenter,
   cellOf,
+  commitDig,
   corruptHash,
   createCrust,
   crustHash,
@@ -73,6 +74,21 @@ test("a second cut is refused and the hash does not move", () => {
   assert.equal(again.crust, crust);
   assert.equal(crustHash(again.crust), hash);
   assert.equal(again.crust.overrides.length, 1);
+});
+
+test("a shared cut lands for both clients or for neither", () => {
+  const a = createCrust();
+  const b = createCrust();
+  const first = commitDig(a, b, 4, 5);
+  assert.equal(first.accepted, true);
+  assert.equal(crustHash(first.a), crustHash(first.b));
+  const hash = crustHash(first.a);
+  const second = commitDig(first.a, first.b, 6, 7);
+  assert.equal(second.accepted, false);
+  assert.match(second.reason, /yard cannot hold/);
+  assert.equal(second.a, first.a);
+  assert.equal(second.b, first.b);
+  assert.equal(crustHash(second.a), hash);
 });
 
 test("a bad before-hash is refused even when the yard has room", () => {

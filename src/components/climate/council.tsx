@@ -23,15 +23,13 @@ import {
 } from "@/lib/climate/model";
 import {
   DIG_DZ_CM,
-  applyDig,
   cellCenter,
   cellOf,
-  corruptHash,
+  commitDig,
   createCrust,
   crustHash,
   floorM,
   overrideAt,
-  proposeDig,
   type Crust,
 } from "@/lib/crust/crust";
 import { turnHash } from "@/lib/turn";
@@ -96,7 +94,7 @@ export function Council() {
         setPair((p) => ({
           ...p,
           canon: step(p.canon, { fileStorm: true }),
-          witness: step(p.witness, { fileStorm: false }),
+          witness: step(p.witness, { fileStorm: true }),
         }));
       }
       raf = requestAnimationFrame(loop);
@@ -114,7 +112,7 @@ export function Council() {
       setPair((p) => ({
         ...p,
         canon: step(p.canon, { fileStorm: true }),
-        witness: step(p.witness, { fileStorm: false }),
+        witness: step(p.witness, { fileStorm: true }),
       }));
     };
     window.addEventListener("keydown", onKey);
@@ -209,7 +207,7 @@ export function Council() {
         next = {
           ...next,
           canon: step(next.canon, { fileStorm: true }),
-          witness: step(next.witness, { fileStorm: false }),
+          witness: step(next.witness, { fileStorm: true }),
         };
       }
       return next;
@@ -335,12 +333,10 @@ export function Council() {
             witnessCut={witnessCut}
             onDig={() => {
               const at = cellOf(view.lat, view.lon);
-              const op = proposeDig(pair.canonCrust, at.ix, at.iy, DIG_DZ_CM);
-              const canon = applyDig(pair.canonCrust, op);
-              const witness = applyDig(pair.witnessCrust, { ...op, beforeHash: corruptHash(op.beforeHash) });
-              setCanonCut({ accepted: canon.accepted, reason: canon.reason });
-              setWitnessCut({ accepted: witness.accepted, reason: witness.reason });
-              setPair((p) => ({ ...p, canonCrust: canon.crust, witnessCrust: witness.crust }));
+              const cut = commitDig(pair.canonCrust, pair.witnessCrust, at.ix, at.iy, DIG_DZ_CM);
+              setCanonCut({ accepted: cut.accepted, reason: cut.reason });
+              setWitnessCut({ accepted: cut.accepted, reason: cut.reason });
+              setPair((p) => ({ ...p, canonCrust: cut.a, witnessCrust: cut.b }));
             }}
           />
 
@@ -404,7 +400,7 @@ export function Council() {
             </dl>
             <p className="mt-2 text-xs text-muted">{view.note}</p>
             <p className="mt-1 text-xs text-muted">
-              Surface sun is {Math.round(view.transmission * 100)}% of the top of the air. Witness B, same cell, still has {witnessView.kwh.toFixed(1)} kWh and particle τ {witnessView.tauAer.toFixed(2)}.
+              Surface sun is {Math.round(view.transmission * 100)}% of the top of the air. Both clients read the same cell: {witnessView.kwh.toFixed(1)} kWh, particle τ {witnessView.tauAer.toFixed(2)}.
             </p>
           </section>
 
@@ -420,7 +416,7 @@ export function Council() {
             <HashRow label="Climate" a={hashA} b={hashB} />
             <HashRow label="Crust" a={crustHash(pair.canonCrust)} b={crustHash(pair.witnessCrust)} />
             <p className="mt-2 text-xs text-muted">
-              The turn hash is the climate record and the crust record. A missed storm line splits the climate half. A bad pit splits the crust half. Either one splits the turn.
+              The turn hash is the climate record and the crust record. Both clients take the same log, so the two halves do not split. A cut the yard cannot hold is refused for both.
             </p>
           </section>
         </aside>
@@ -486,13 +482,13 @@ function Former({
         Dig 2 m
       </button>
       <p className="mt-2 text-xs text-muted">
-        One kilometer, two meters down, 3,000,000,000 kg at 1,500 kg/m³. The yard holds one cut. Witness B is given a bad before-hash and does not dig. Floor pressure moves by {delta.toFixed(2)} Pa. The climate cell does not.
+        One kilometer, two meters down, 3,000,000,000 kg at 1,500 kg/m³. The yard holds one cut. Both clients take it, or neither does. Floor pressure moves by {delta.toFixed(2)} Pa. The climate cell does not.
       </p>
       <p className={`mt-2 text-xs ${canonCut?.accepted ? "text-frost" : "text-muted"}`}>
-        Canon: {canonCut ? canonCut.reason : "no cut yet"}
+        Order: {canonCut ? canonCut.reason : "no cut yet"}
       </p>
       <p className="mt-1 text-xs text-muted">
-        Witness B: {witnessCut ? witnessCut.reason : "no cut yet"} · spoil {formatKg(witness.spoilKg)}
+        Both clients: {witnessCut ? witnessCut.reason : "no cut yet"} · spoil {formatKg(witness.spoilKg)}
       </p>
     </section>
   );

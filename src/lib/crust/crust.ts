@@ -130,6 +130,23 @@ export function proposeDig(crust: Crust, ix: number, iy: number, dzCm = DIG_DZ_C
   return { ix, iy, dzCm, beforeHash: beforeHash(crust, ix, iy) };
 }
 
+/** Both clients take the cut, or neither does. A refusal leaves both hashes where they were. */
+export function commitDig(
+  a: Crust,
+  b: Crust,
+  ix: number,
+  iy: number,
+  dzCm = DIG_DZ_CM,
+): { a: Crust; b: Crust; accepted: boolean; reason: string } {
+  const op = proposeDig(a, ix, iy, dzCm);
+  const left = applyDig(a, op);
+  const right = applyDig(b, op);
+  if (!left.accepted || !right.accepted) {
+    return { a, b, accepted: false, reason: left.accepted ? right.reason : left.reason };
+  }
+  return { a: left.crust, b: right.crust, accepted: true, reason: left.reason };
+}
+
 function withOverride(rows: readonly Override[], ix: number, iy: number, dzCm: number): Override[] {
   const next = rows.map((row) => ({ ...row }));
   const index = next.findIndex((row) => row.ix === ix && row.iy === iy);
