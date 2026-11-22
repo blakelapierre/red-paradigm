@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createCrust, crustHash } from "../crust/crust.ts";
-import { commitMill, MILL_FINES_KG, MILL_KWH, MILL_SPOIL_KG } from "./mill.ts";
+import { commitMill, FINES_CAP_KG, MILL_FINES_KG, MILL_KWH, MILL_SPOIL_KG } from "./mill.ts";
 import { createStocks } from "./power.ts";
 
 function loaded() {
@@ -38,4 +38,17 @@ test("no spoil or no power leaves the yard untouched", () => {
   assert.equal(noPower.accepted, false);
   assert.equal(crustHash(noPower.a), before);
   assert.equal(noPower.a.spoilKg, MILL_SPOIL_KG);
+});
+
+test("the warehouse stops at ten batches", () => {
+  const { crust, stocks } = loaded();
+  const full = { ...stocks, finesKg: FINES_CAP_KG - MILL_FINES_KG + 1n };
+  const refused = commitMill(crust, crust, full, full);
+  assert.equal(refused.accepted, false);
+  assert.match(refused.reason, /warehouse/);
+  assert.equal(refused.a.spoilKg, crust.spoilKg);
+  const room = { ...stocks, finesKg: FINES_CAP_KG - MILL_FINES_KG };
+  const milled = commitMill(crust, crust, room, room);
+  assert.equal(milled.accepted, true);
+  assert.equal(milled.aStocks.finesKg, FINES_CAP_KG);
 });

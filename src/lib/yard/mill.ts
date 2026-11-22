@@ -5,6 +5,8 @@ import { type Stocks } from "./power.ts";
 export const MILL_SPOIL_KG = 100_000_000n;
 export const MILL_FINES_KG = 5_000_000n;
 export const MILL_KWH = 1_000_000;
+/** Ten batches. The warehouse is not the pit. */
+export const FINES_CAP_KG = 50_000_000n;
 
 export type MillResult = {
   a: Crust;
@@ -26,6 +28,9 @@ export function commitMill(a: Crust, b: Crust, aStocks: Stocks, bStocks: Stocks)
   }
   if (a.spoilKg < MILL_SPOIL_KG || b.spoilKg < MILL_SPOIL_KG) {
     return refuse(a, b, aStocks, bStocks, `yard has no ${MILL_SPOIL_KG.toString()} kg batch`);
+  }
+  if (aStocks.finesKg + MILL_FINES_KG > FINES_CAP_KG || bStocks.finesKg + MILL_FINES_KG > FINES_CAP_KG) {
+    return refuse(a, b, aStocks, bStocks, `warehouse holds ${FINES_CAP_KG.toString()} kg`);
   }
   const take = (crust: Crust): Crust => ({ ...crust, spoilKg: crust.spoilKg - MILL_SPOIL_KG });
   const spend = (stocks: Stocks): Stocks => ({
