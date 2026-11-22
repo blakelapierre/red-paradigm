@@ -16,6 +16,8 @@ export type Stocks = {
   finesKg: bigint;
   waterKg: bigint;
   iceKg: bigint;
+  o2Kg: bigint;
+  h2Kg: bigint;
   toxinMilli: number;
 };
 
@@ -26,6 +28,8 @@ export function createStocks(): Stocks {
     finesKg: 0n,
     waterKg: 0n,
     iceKg: 1_000_000_000n,
+    o2Kg: 0n,
+    h2Kg: 0n,
     toxinMilli: 0,
   };
 }
@@ -41,7 +45,7 @@ export function credit(stocks: Stocks, kwh: number): Stocks {
 }
 
 export function stocksBytes(stocks: Stocks): Uint8Array {
-  const bytes = new Uint8Array(40);
+  const bytes = new Uint8Array(56);
   const view = new DataView(bytes.buffer);
   bytes.set([0x50, 0x57, 0x52, 0x31]);
   view.setUint32(4, stocks.batteryKwh);
@@ -52,7 +56,11 @@ export function stocksBytes(stocks: Stocks): Uint8Array {
   view.setUint32(24, Number(stocks.waterKg & 0xffffffffn));
   view.setUint32(28, Number((stocks.iceKg >> 32n) & 0xffffffffn));
   view.setUint32(32, Number(stocks.iceKg & 0xffffffffn));
-  view.setUint32(36, stocks.toxinMilli >>> 0);
+  view.setUint32(36, Number((stocks.o2Kg >> 32n) & 0xffffffffn));
+  view.setUint32(40, Number(stocks.o2Kg & 0xffffffffn));
+  view.setUint32(44, Number((stocks.h2Kg >> 32n) & 0xffffffffn));
+  view.setUint32(48, Number(stocks.h2Kg & 0xffffffffn));
+  view.setUint32(52, stocks.toxinMilli >>> 0);
   return bytes;
 }
 
