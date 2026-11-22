@@ -702,10 +702,10 @@ function Former({
         Raise a berm
       </button>
       <p className="mt-2 font-mono text-xs text-muted">
-        ice {formatKg(stocks.iceKg)} · water {formatKg(stocks.waterKg)} · O2 {formatKg(stocks.o2Kg)} · H2 {formatKg(stocks.h2Kg)} · CH4 {formatKg(stocks.ch4Kg)} · toxin {stocks.toxinMilli} · debt {stocks.debt ? "owed" : "clear"}
+        ice {formatKg(stocks.iceKg)} · water {formatKg(stocks.waterKg)} · O2 {formatKg(stocks.o2Kg)} · H2 {formatKg(stocks.h2Kg)} · CH4 {formatKg(stocks.ch4Kg)} · toxin {stocks.toxinMilli} · debt {stocks.debt ? "owed" : "clear"} · biomass {stocks.biomassG} g
       </p>
       <p className="mt-2 text-xs text-muted">
-        Each sol takes 1 kg of oxygen and 3 kg of water. If either is short, the sol is owed and neither is spent. A roof costs 10,000 kWh that same sol. If the battery cannot pay, every roof comes down.
+        Each sol takes 1 kg of oxygen and 3 kg of water. If either is short, the sol is owed and neither is spent. A roof costs 10,000 kWh that same sol. If the battery cannot pay, every roof comes down. Under a standing roof, with clean water and no debt, one gram of biomass grows and one kilogram of water is spent. The air mass does not move.
       </p>
       <p className="mt-2 text-xs text-muted">
         One kilometer, two meters down, 3,000,000,000 kg at 1,500 kg/m³. The cut costs {formatKwh(CUT_KWH)}. A mill batch is 100,000,000 kg of spoil and 1,000,000 kWh, and five percent of that mass is fines. Paint is 50,000 kg of fines on this kilometer, albedo 0.10. This cell's albedo stays {(climateAlbedoMilli / 1000).toFixed(3)}. The coat is {paintOf(canon, at.ix, at.iy) > 0 ? "on" : "not on"} this kilometer. Floor pressure moves by {delta.toFixed(2)} Pa.
