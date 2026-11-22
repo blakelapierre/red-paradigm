@@ -8,6 +8,7 @@ import { drawCrew } from "./crew.ts";
 import { abrade, scaleArray } from "./health.ts";
 import { KILOPOWER_KWH } from "./kilopower.ts";
 import { keepRoof } from "./upkeep.ts";
+import { shedHeat } from "./radiator.ts";
 
 /** One crust cell of panels at the Low Cradle. Not the 100 m² survey coupon. */
 export const ARRAY_M2 = 1_000_000;
@@ -35,6 +36,8 @@ export type Stocks = {
   reactor: number;
   cabinRiseK: number;
   drawnKg: number;
+  heatKwh: number;
+  radiator: number;
 };
 
 export function createStocks(): Stocks {
@@ -56,6 +59,8 @@ export function createStocks(): Stocks {
     reactor: 0,
     cabinRiseK: 0,
     drawnKg: 0,
+    heatKwh: 0,
+    radiator: 0,
   };
 }
 
@@ -70,7 +75,7 @@ export function credit(stocks: Stocks, kwh: number): Stocks {
 }
 
 export function stocksBytes(stocks: Stocks): Uint8Array {
-  const bytes = new Uint8Array(100);
+  const bytes = new Uint8Array(108);
   const view = new DataView(bytes.buffer);
   bytes.set([0x50, 0x57, 0x52, 0x31]);
   view.setUint32(4, stocks.batteryKwh);
@@ -97,6 +102,8 @@ export function stocksBytes(stocks: Stocks): Uint8Array {
   view.setUint32(88, stocks.reactor >>> 0);
   view.setUint32(92, stocks.cabinRiseK >>> 0);
   view.setUint32(96, stocks.drawnKg >>> 0);
+  view.setUint32(100, stocks.heatKwh >>> 0);
+  view.setUint32(104, stocks.radiator >>> 0);
   return bytes;
 }
 
@@ -119,7 +126,7 @@ export function closeSol(
   }
   const kept = keepRoof(crust, drawCrew(nextStocks));
   const boiled = boilMethane(kept.crust, kept.stocks);
-  return { world: next, stocks: grow(kept.crust, boiled), crust: kept.crust };
+  return { world: next, stocks: shedHeat(grow(kept.crust, boiled)), crust: kept.crust };
 }
 
 export function commitPoweredCut(
