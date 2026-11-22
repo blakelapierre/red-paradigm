@@ -13,7 +13,8 @@ export function commitWash(a: Stocks, b: Stocks): { a: Stocks; b: Stocks; accept
     ...s,
     batteryKwh: s.batteryKwh - WASH_KWH,
     waterKg: s.waterKg - WASH_WATER_KG,
+    brineKg: s.brineKg + WASH_WATER_KG,
     toxinMilli: 0,
   });
-  return { a: take(a), b: take(b), accepted: true, reason: "washed the tanks" };
+  return { a: take(a), b: take(b), accepted: true, reason: "washed the tanks into brine" };
 }

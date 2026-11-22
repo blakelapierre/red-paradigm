@@ -726,7 +726,7 @@ function Former({
         Repair the array
       </button>
       <p className="mt-2 font-mono text-xs text-muted">
-        ice {formatKg(stocks.iceKg)} · water {formatKg(stocks.waterKg)} · O2 {formatKg(stocks.o2Kg)} · H2 {formatKg(stocks.h2Kg)} · CH4 {formatKg(stocks.ch4Kg)} · toxin {stocks.toxinMilli} · debt {stocks.debt ? "owed" : "clear"} · biomass {stocks.biomassG} g · collector {stocks.collector ? "up" : "down"} · health {stocks.healthMilli}/1000
+        ice {formatKg(stocks.iceKg)} · water {formatKg(stocks.waterKg)} · brine {formatKg(stocks.brineKg)} · O2 {formatKg(stocks.o2Kg)} · H2 {formatKg(stocks.h2Kg)} · CH4 {formatKg(stocks.ch4Kg)} · toxin {stocks.toxinMilli} · debt {stocks.debt ? "owed" : "clear"} · biomass {stocks.biomassG} g · collector {stocks.collector ? "up" : "down"} · health {stocks.healthMilli}/1000
       </p>
       <p className="mt-2 text-xs text-muted">
         Each sol takes 1 kg of oxygen and 3 kg of water. If either is short, the sol is owed and neither is spent. A roof costs 10,000 kWh that same sol. If the battery cannot pay, every roof comes down. Under a standing roof, with clean water and no debt, one gram of biomass grows and one kilogram of water is spent. The air mass does not move. A collector costs 30,000 kg of fines. On a stripping sol it returns a tenth of the particle mass that left this array's climate cell. Five grams per square meter per optical depth is an order of magnitude. A clear sol returns nothing. A stripping sol also takes 10/1000 off the array after that sol's power is banked. Repair spends 10,000 kg of fines to put 100/1000 back.

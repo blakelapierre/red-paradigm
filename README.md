@@ -19,7 +19,7 @@ The council map is a climate tick and one former, not the whole game.
 - Electrolysis of 36 kg of water for 200 kWh. It yields 4 kg of hydrogen and 32 kg of oxygen. The masses close.
 - One Sabatier batch. 8 kg of hydrogen and 50 kWh become 16 kg of methane and 36 kg of water. The planetary CO₂ bar does not move.
 - Burn 16 kg of methane with 64 kg of oxygen. Electricity is 8 kWh per kilogram of methane, 128 kWh, plus 36 kg of water back.
-- Wash the tanks. 100 kg of water and 20 kWh clear toxin 1000. A clean tank refuses the wash.
+- Wash the tanks. 100 kg of water and 20 kWh clear toxin 1000. That water becomes brine. It is not clean water again. A clean tank refuses the wash.
 - Roof one kilometer. 50,000 kg of fines and 100,000 kWh. Inside the vessel is 101,325 Pa. The climate cell's pressure does not move.
 - One road. 20,000 kg of fines on one kilometer. The climate cell does not move.
 - One berm. 20,000 kg of fines. The climate cell's temperature amplitude does not move.
