@@ -15,7 +15,8 @@ The council map is a climate tick and one former, not the whole game.
 - One former cut. A 1 km cell, 2 m down. Spoil is 3,000,000,000 kg. The yard holds that once. The cut costs 2,000,000 kWh from a 1 km² array at the Low Cradle, about 1 kWh per cubic meter. One clear sol cannot pay. A storm sol pays tens of thousands. A refused cut spends nothing, for both clients. The climate cell does not move.
 - One mill batch. 100,000,000 kg of spoil and 1,000,000 kWh become 5,000,000 kg of fines. The other 95 percent is not metal. The warehouse holds 50,000,000 kg. No spoil, no power, or a full warehouse, and neither client mills.
 - One painted kilometer. 50,000 kg of fines, albedo 0.10 on that cell only. A 5° climate cell does not move. Both clients paint, or neither does.
-- One turn hash over the climate record, the crust record, and the battery. They stay together. The hash does not split.
+- One tonne of ice. 50 kWh from a 1,000,000,000 kg lens at the cradle. The water is dirty: toxin 1000. An empty lens or an empty battery mines for neither client.
+- One turn hash over the climate record, the crust record, and the stocks. They stay together. The hash does not split.
 
 `node_modules` is not in the repo. Install, then:
 

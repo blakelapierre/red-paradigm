@@ -10,10 +10,24 @@ export const BATTERY_CAP_KWH = 4_000_000;
 
 export const CRADLE = siteIndex("cradle");
 
-export type Stocks = { batteryKwh: number; capKwh: number; finesKg: bigint };
+export type Stocks = {
+  batteryKwh: number;
+  capKwh: number;
+  finesKg: bigint;
+  waterKg: bigint;
+  iceKg: bigint;
+  toxinMilli: number;
+};
 
 export function createStocks(): Stocks {
-  return { batteryKwh: 0, capKwh: BATTERY_CAP_KWH, finesKg: 0n };
+  return {
+    batteryKwh: 0,
+    capKwh: BATTERY_CAP_KWH,
+    finesKg: 0n,
+    waterKg: 0n,
+    iceKg: 1_000_000_000n,
+    toxinMilli: 0,
+  };
 }
 
 export function arrayKwh(world: World, index = CRADLE): number {
@@ -27,13 +41,18 @@ export function credit(stocks: Stocks, kwh: number): Stocks {
 }
 
 export function stocksBytes(stocks: Stocks): Uint8Array {
-  const bytes = new Uint8Array(20);
+  const bytes = new Uint8Array(40);
   const view = new DataView(bytes.buffer);
   bytes.set([0x50, 0x57, 0x52, 0x31]);
   view.setUint32(4, stocks.batteryKwh);
   view.setUint32(8, stocks.capKwh);
   view.setUint32(12, Number((stocks.finesKg >> 32n) & 0xffffffffn));
   view.setUint32(16, Number(stocks.finesKg & 0xffffffffn));
+  view.setUint32(20, Number((stocks.waterKg >> 32n) & 0xffffffffn));
+  view.setUint32(24, Number(stocks.waterKg & 0xffffffffn));
+  view.setUint32(28, Number((stocks.iceKg >> 32n) & 0xffffffffn));
+  view.setUint32(32, Number(stocks.iceKg & 0xffffffffn));
+  view.setUint32(36, stocks.toxinMilli >>> 0);
   return bytes;
 }
 

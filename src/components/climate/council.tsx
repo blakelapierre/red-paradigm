@@ -30,6 +30,7 @@ import {
   type Crust,
 } from "@/lib/crust/crust";
 import { turnHash } from "@/lib/turn";
+import { commitMine } from "@/lib/yard/ice";
 import { commitMill } from "@/lib/yard/mill";
 import { commitPaint } from "@/lib/yard/paint";
 import { commitRelease } from "@/lib/yard/release";
@@ -402,6 +403,12 @@ export function Council() {
                 witnessStocks: painted.bStocks,
               }));
             }}
+            onMine={() => {
+              const mined = commitMine(pair.canonStocks, pair.witnessStocks);
+              setCanonCut({ accepted: mined.accepted, reason: mined.reason });
+              setWitnessCut({ accepted: mined.accepted, reason: mined.reason });
+              setPair((p) => ({ ...p, canonStocks: mined.a, witnessStocks: mined.b }));
+            }}
             climateAlbedoMilli={world.albedoMilli[selected]}
           />
 
@@ -517,6 +524,7 @@ function Former({
   onDig,
   onMill,
   onPaint,
+  onMine,
   climateAlbedoMilli,
 }: {
   seedZm: number;
@@ -531,6 +539,7 @@ function Former({
   onDig: () => void;
   onMill: () => void;
   onPaint: () => void;
+  onMine: () => void;
   climateAlbedoMilli: number;
 }) {
   const at = cellOf(lat, lon);
@@ -576,6 +585,12 @@ function Former({
       <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onPaint}>
         Paint this kilometer
       </button>
+      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onMine}>
+        Mine 1 t ice
+      </button>
+      <p className="mt-2 font-mono text-xs text-muted">
+        ice {formatKg(stocks.iceKg)} · water {formatKg(stocks.waterKg)} · toxin {stocks.toxinMilli}
+      </p>
       <p className="mt-2 text-xs text-muted">
         One kilometer, two meters down, 3,000,000,000 kg at 1,500 kg/m³. The cut costs {formatKwh(CUT_KWH)}. A mill batch is 100,000,000 kg of spoil and 1,000,000 kWh, and five percent of that mass is fines. Paint is 50,000 kg of fines on this kilometer, albedo 0.10. This cell's albedo stays {(climateAlbedoMilli / 1000).toFixed(3)}. The coat is {paintOf(canon, at.ix, at.iy) > 0 ? "on" : "not on"} this kilometer. Floor pressure moves by {delta.toFixed(2)} Pa.
       </p>
