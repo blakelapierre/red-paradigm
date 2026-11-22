@@ -4,6 +4,7 @@ import { commitDig, type Crust } from "../crust/crust.ts";
 import { grow } from "./biomass.ts";
 import { collectSalvage } from "./collector.ts";
 import { drawCrew } from "./crew.ts";
+import { abrade, scaleArray } from "./health.ts";
 import { keepRoof } from "./upkeep.ts";
 
 /** One crust cell of panels at the Low Cradle. Not the 100 m² survey coupon. */
@@ -27,6 +28,7 @@ export type Stocks = {
   debt: number;
   biomassG: number;
   collector: number;
+  healthMilli: number;
 };
 
 export function createStocks(): Stocks {
@@ -43,6 +45,7 @@ export function createStocks(): Stocks {
     debt: 0,
     biomassG: 0,
     collector: 0,
+    healthMilli: 1000,
   };
 }
 
@@ -57,7 +60,7 @@ export function credit(stocks: Stocks, kwh: number): Stocks {
 }
 
 export function stocksBytes(stocks: Stocks): Uint8Array {
-  const bytes = new Uint8Array(76);
+  const bytes = new Uint8Array(80);
   const view = new DataView(bytes.buffer);
   bytes.set([0x50, 0x57, 0x52, 0x31]);
   view.setUint32(4, stocks.batteryKwh);
@@ -78,6 +81,7 @@ export function stocksBytes(stocks: Stocks): Uint8Array {
   view.setUint32(64, stocks.debt >>> 0);
   view.setUint32(68, stocks.biomassG >>> 0);
   view.setUint32(72, stocks.collector >>> 0);
+  view.setUint32(76, stocks.healthMilli >>> 0);
   return bytes;
 }
 
@@ -88,10 +92,11 @@ export function closeSol(
   crust: Crust,
   index = CRADLE,
 ): { world: World; stocks: Stocks; crust: Crust } {
-  const gain = arrayKwh(world, index);
+  const gain = scaleArray(arrayKwh(world, index), stocks.healthMilli);
   const beforeTau = world.tauAerMilli[index];
   const next = step(world, { fileStorm: true });
   let nextStocks = credit(stocks, gain);
+  nextStocks = abrade(nextStocks, stormTau(next.sol, next.storm) > 0.05);
   if (stormTau(next.sol, next.storm) > 0.05) {
     const lost = beforeTau - next.tauAerMilli[index];
     nextStocks = collectSalvage(nextStocks, lost, cellLat(latIndexOf(index)));

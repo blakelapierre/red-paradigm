@@ -34,6 +34,7 @@ import { commitRoof } from "@/lib/yard/roof";
 import { commitRoad } from "@/lib/yard/road";
 import { commitBerm } from "@/lib/yard/berm";
 import { commitCollector } from "@/lib/yard/collector";
+import { scaleArray, commitRepair } from "@/lib/yard/health";
 import { commitWash } from "@/lib/yard/wash";
 import { commitBurn } from "@/lib/yard/burn";
 import { commitSabatier } from "@/lib/yard/sabatier";
@@ -378,7 +379,7 @@ export function Council() {
             canon={pair.canonCrust}
             witness={pair.witnessCrust}
             stocks={pair.canonStocks}
-            array={arrayKwh(world)}
+            array={scaleArray(arrayKwh(world), pair.canonStocks.healthMilli)}
             canonCut={canonCut}
             witnessCut={witnessCut}
             onDig={() => {
@@ -493,6 +494,12 @@ export function Council() {
               setCanonCut({ accepted: up.accepted, reason: up.reason });
               setWitnessCut({ accepted: up.accepted, reason: up.reason });
               setPair((p) => ({ ...p, canonStocks: up.a, witnessStocks: up.b }));
+            }}
+            onRepair={() => {
+              const fixed = commitRepair(pair.canonStocks, pair.witnessStocks);
+              setCanonCut({ accepted: fixed.accepted, reason: fixed.reason });
+              setWitnessCut({ accepted: fixed.accepted, reason: fixed.reason });
+              setPair((p) => ({ ...p, canonStocks: fixed.a, witnessStocks: fixed.b }));
             }}
             climateAlbedoMilli={world.albedoMilli[selected]}
           />
@@ -618,6 +625,7 @@ function Former({
   onRoad,
   onBerm,
   onCollector,
+  onRepair,
   climateAlbedoMilli,
 }: {
   seedZm: number;
@@ -641,6 +649,7 @@ function Former({
   onRoad: () => void;
   onBerm: () => void;
   onCollector: () => void;
+  onRepair: () => void;
   climateAlbedoMilli: number;
 }) {
   const at = cellOf(lat, lon);
@@ -713,11 +722,14 @@ function Former({
       <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onCollector}>
         Raise a collector
       </button>
+      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onRepair}>
+        Repair the array
+      </button>
       <p className="mt-2 font-mono text-xs text-muted">
-        ice {formatKg(stocks.iceKg)} · water {formatKg(stocks.waterKg)} · O2 {formatKg(stocks.o2Kg)} · H2 {formatKg(stocks.h2Kg)} · CH4 {formatKg(stocks.ch4Kg)} · toxin {stocks.toxinMilli} · debt {stocks.debt ? "owed" : "clear"} · biomass {stocks.biomassG} g · collector {stocks.collector ? "up" : "down"}
+        ice {formatKg(stocks.iceKg)} · water {formatKg(stocks.waterKg)} · O2 {formatKg(stocks.o2Kg)} · H2 {formatKg(stocks.h2Kg)} · CH4 {formatKg(stocks.ch4Kg)} · toxin {stocks.toxinMilli} · debt {stocks.debt ? "owed" : "clear"} · biomass {stocks.biomassG} g · collector {stocks.collector ? "up" : "down"} · health {stocks.healthMilli}/1000
       </p>
       <p className="mt-2 text-xs text-muted">
-        Each sol takes 1 kg of oxygen and 3 kg of water. If either is short, the sol is owed and neither is spent. A roof costs 10,000 kWh that same sol. If the battery cannot pay, every roof comes down. Under a standing roof, with clean water and no debt, one gram of biomass grows and one kilogram of water is spent. The air mass does not move. A collector costs 30,000 kg of fines. On a stripping sol it returns a tenth of the particle mass that left this array's climate cell. Five grams per square meter per optical depth is an order of magnitude. A clear sol returns nothing.
+        Each sol takes 1 kg of oxygen and 3 kg of water. If either is short, the sol is owed and neither is spent. A roof costs 10,000 kWh that same sol. If the battery cannot pay, every roof comes down. Under a standing roof, with clean water and no debt, one gram of biomass grows and one kilogram of water is spent. The air mass does not move. A collector costs 30,000 kg of fines. On a stripping sol it returns a tenth of the particle mass that left this array's climate cell. Five grams per square meter per optical depth is an order of magnitude. A clear sol returns nothing. A stripping sol also takes 10/1000 off the array after that sol's power is banked. Repair spends 10,000 kg of fines to put 100/1000 back.
       </p>
       <p className="mt-2 text-xs text-muted">
         One kilometer, two meters down, 3,000,000,000 kg at 1,500 kg/m³. The cut costs {formatKwh(CUT_KWH)}. A mill batch is 100,000,000 kg of spoil and 1,000,000 kWh, and five percent of that mass is fines. Paint is 50,000 kg of fines on this kilometer, albedo 0.10. This cell's albedo stays {(climateAlbedoMilli / 1000).toFixed(3)}. The coat is {paintOf(canon, at.ix, at.iy) > 0 ? "on" : "not on"} this kilometer. Floor pressure moves by {delta.toFixed(2)} Pa.
