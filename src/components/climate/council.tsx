@@ -34,6 +34,7 @@ import {
   proposeDig,
   type Crust,
 } from "@/lib/crust/crust";
+import { turnHash } from "@/lib/turn";
 
 type Pair = { canon: World; witness: World; canonCrust: Crust; witnessCrust: Crust };
 type CutNote = { accepted: boolean; reason: string };
@@ -197,6 +198,8 @@ export function Council() {
   const view = inspect(world, selected);
   const hashA = stateHash(world);
   const hashB = stateHash(pair.witness);
+  const turnA = turnHash(world, pair.canonCrust);
+  const turnB = turnHash(pair.witness, pair.witnessCrust);
   const witnessView = inspect(pair.witness, selected);
 
   const advance = (sols: number) => {
@@ -406,11 +409,18 @@ export function Council() {
           </section>
 
           <section className="rounded-sm border border-line bg-surface p-3">
-            <h2 className="text-sm font-medium text-fg">Witness</h2>
+            <h2 className="flex items-center justify-between text-sm font-medium text-fg">
+              Witness
+              <span className={turnA === turnB ? "font-mono text-xs text-frost" : "font-mono text-xs text-oxide"}>
+                {turnA === turnB ? "AGREE" : "HASH SPLIT"}
+              </span>
+            </h2>
+            <p className="mt-1 break-all font-mono text-xs text-fg">{turnA.slice(0, 32)}</p>
+            <p className="mt-1 break-all font-mono text-xs text-muted">{turnB.slice(0, 32)}</p>
             <HashRow label="Climate" a={hashA} b={hashB} />
             <HashRow label="Crust" a={crustHash(pair.canonCrust)} b={crustHash(pair.witnessCrust)} />
             <p className="mt-2 text-xs text-muted">
-              Sol 12 files the storm. Witness B never gets that line. A dig files a before-hash. Witness B is handed a bad one, so the pit is not cut.
+              The turn hash is the climate record and the crust record. A missed storm line splits the climate half. A bad pit splits the crust half. Either one splits the turn.
             </p>
           </section>
         </aside>

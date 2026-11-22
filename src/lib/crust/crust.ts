@@ -104,7 +104,7 @@ export function beforeHash(crust: Crust, ix: number, iy: number): string {
   return toHex(sha256(bytes));
 }
 
-export function crustHash(crust: Crust): string {
+export function crustBytes(crust: Crust): Uint8Array {
   const n = crust.overrides.length;
   const bytes = new Uint8Array(4 + 4 + 8 + 8 + 4 + n * 12);
   const view = new DataView(bytes.buffer);
@@ -119,7 +119,11 @@ export function crustHash(crust: Crust): string {
     writeI32(view, at + 4, row.iy);
     writeI32(view, at + 8, row.dzCm);
   });
-  return toHex(sha256(bytes));
+  return bytes;
+}
+
+export function crustHash(crust: Crust): string {
+  return toHex(sha256(crustBytes(crust)));
 }
 
 export function proposeDig(crust: Crust, ix: number, iy: number, dzCm = DIG_DZ_CM): DigOp {

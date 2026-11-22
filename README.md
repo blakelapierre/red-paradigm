@@ -13,6 +13,7 @@ The council map is a climate tick and one former, not the whole game.
 - A particle release. Optical depth 0.80, half gone in 40 sols. The CO₂ bar does not move.
 - An encircling storm filed on sol 12. A witness who never gets that line fails the hash. By sol 32 the surface sun is about 2%.
 - One former cut. A 1 km cell, 2 m down, written as an integer centimeter override. Spoil is 3,000,000,000 kg. The yard holds that once. A second cut is refused. A witness with a bad before-hash does not dig. The climate cell does not move. Two meters of pit changes floor pressure by less than 1 Pa.
+- One turn hash over both records. It splits if the storm line is missing or the pit was rejected.
 
 `node_modules` is not in the repo. Install, then:
 
