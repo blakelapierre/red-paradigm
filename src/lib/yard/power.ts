@@ -1,6 +1,7 @@
 import { PANEL_M2 } from "../climate/constants.ts";
 import { inspect, siteIndex, step, type World } from "../climate/model.ts";
 import { commitDig, type Crust } from "../crust/crust.ts";
+import { drawCrew } from "./crew.ts";
 
 /** One crust cell of panels at the Low Cradle. Not the 100 m² survey coupon. */
 export const ARRAY_M2 = 1_000_000;
@@ -20,6 +21,7 @@ export type Stocks = {
   h2Kg: bigint;
   ch4Kg: bigint;
   toxinMilli: number;
+  debt: number;
 };
 
 export function createStocks(): Stocks {
@@ -33,6 +35,7 @@ export function createStocks(): Stocks {
     h2Kg: 0n,
     ch4Kg: 0n,
     toxinMilli: 0,
+    debt: 0,
   };
 }
 
@@ -47,7 +50,7 @@ export function credit(stocks: Stocks, kwh: number): Stocks {
 }
 
 export function stocksBytes(stocks: Stocks): Uint8Array {
-  const bytes = new Uint8Array(64);
+  const bytes = new Uint8Array(68);
   const view = new DataView(bytes.buffer);
   bytes.set([0x50, 0x57, 0x52, 0x31]);
   view.setUint32(4, stocks.batteryKwh);
@@ -65,13 +68,14 @@ export function stocksBytes(stocks: Stocks): Uint8Array {
   view.setUint32(52, stocks.toxinMilli >>> 0);
   view.setUint32(56, Number((stocks.ch4Kg >> 32n) & 0xffffffffn));
   view.setUint32(60, Number(stocks.ch4Kg & 0xffffffffn));
+  view.setUint32(64, stocks.debt >>> 0);
   return bytes;
 }
 
-/** Bank this sol's array, then advance. Both clients call this on their own world. */
+/** Bank this sol's array, then the crew draws, then the sol advances. */
 export function closeSol(world: World, stocks: Stocks, index = CRADLE): { world: World; stocks: Stocks } {
   const gain = arrayKwh(world, index);
-  return { world: step(world, { fileStorm: true }), stocks: credit(stocks, gain) };
+  return { world: step(world, { fileStorm: true }), stocks: drawCrew(credit(stocks, gain)) };
 }
 
 export function commitPoweredCut(

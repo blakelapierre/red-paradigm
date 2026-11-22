@@ -23,6 +23,7 @@ The council map is a climate tick and one former, not the whole game.
 - Roof one kilometer. 50,000 kg of fines and 100,000 kWh. Inside the vessel is 101,325 Pa. The climate cell's pressure does not move.
 - One road. 20,000 kg of fines on one kilometer. The climate cell does not move.
 - One berm. 20,000 kg of fines. The climate cell's temperature amplitude does not move.
+- The crew. One kilogram of oxygen and three kilograms of water each sol. Short either one and the sol is owed. Nothing is spent on a debt.
 - One turn hash over the climate record, the crust record, and the stocks. They stay together. The hash does not split.
 
 `node_modules` is not in the repo. Install, then:
