@@ -307,6 +307,13 @@ export function step(world: World, opts: { fileStorm: boolean }): World {
   return derive({ ...world, sol, ls: lsAt(sol), storm, tauAerMilli: tauAer });
 }
 
+export function addAerosol(world: World, index: number, milli: number): World {
+  const tauAer = new Uint16Array(world.tauAerMilli);
+  const next = Math.max(0, Math.min(65535, tauAer[index] + Math.round(milli)));
+  tauAer[index] = next;
+  return derive({ ...world, tauAerMilli: tauAer });
+}
+
 export function releaseAerosol(world: World, index: number): World {
   const tauAer = new Uint16Array(world.tauAerMilli);
   tauAer[index] = RELEASE_TAU_MILLI;

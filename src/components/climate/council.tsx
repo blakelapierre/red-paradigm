@@ -12,7 +12,6 @@ import {
   formatPa,
   formatTemp,
   inspect,
-  releaseAerosol,
   seasonLabel,
   siteIndex,
   stateHash,
@@ -31,6 +30,7 @@ import {
 } from "@/lib/crust/crust";
 import { turnHash } from "@/lib/turn";
 import { commitMill } from "@/lib/yard/mill";
+import { commitRelease } from "@/lib/yard/release";
 import {
   CUT_KWH,
   arrayKwh,
@@ -295,13 +295,25 @@ export function Council() {
             <button
               type="button"
               className="min-h-11 rounded-sm bg-oxide px-3 text-sm font-medium text-bg"
-              onClick={() =>
+              onClick={() => {
+                const released = commitRelease(
+                  pair.canon,
+                  pair.witness,
+                  pair.canonStocks,
+                  pair.witnessStocks,
+                  selected,
+                  view.lat,
+                );
+                setCanonCut({ accepted: released.accepted, reason: released.reason });
+                setWitnessCut({ accepted: released.accepted, reason: released.reason });
                 setPair((p) => ({
                   ...p,
-                  canon: releaseAerosol(p.canon, selected),
-                  witness: releaseAerosol(p.witness, selected),
-                }))
-              }
+                  canon: released.a,
+                  witness: released.b,
+                  canonStocks: released.aStocks,
+                  witnessStocks: released.bStocks,
+                }));
+              }}
             >
               Release particles here
             </button>
@@ -336,7 +348,7 @@ export function Council() {
               </button>
             </div>
             <p className="text-xs text-muted">
-              Particles are iron and aluminum fines, optical depth 0.80. They halve in 40 sols. They do not move the CO₂ bar. One sol also banks the cradle array.
+              Lofting spends 5,000,000 kg of fines and 200,000 kWh. Five grams per square meter is optical depth 1, so one batch is a thin veil over this climate cell, not τ 0.80. It does warm the cell. It does not move the CO₂ bar.
             </p>
           </div>
 

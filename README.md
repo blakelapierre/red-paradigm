@@ -10,7 +10,7 @@ The council map is a climate tick and one former, not the whole game.
 
 - Survey pressure at four sites, from 610 Pa and an 11 km scale height.
 - One sol of heat. The equator stays cold. A winter pole falls through the CO₂ frost point.
-- A particle release. Optical depth 0.80, half gone in 40 sols. The CO₂ bar does not move.
+- A paid particle loft. 5,000,000 kg of fines and 200,000 kWh. Five grams per square meter is optical depth 1, so one batch is a thin veil, not τ 0.80. It warms that climate cell. It does not move the CO₂ bar. Half of it is gone in 40 sols.
 - An encircling storm filed on sol 12, for both clients. By sol 32 the surface sun is about 2%. Dropping that line would split the hash. This board does not drop it.
 - One former cut. A 1 km cell, 2 m down. Spoil is 3,000,000,000 kg. The yard holds that once. The cut costs 2,000,000 kWh from a 1 km² array at the Low Cradle, about 1 kWh per cubic meter. One clear sol cannot pay. A storm sol pays tens of thousands. A refused cut spends nothing, for both clients. The climate cell does not move.
 - One mill batch. 100,000,000 kg of spoil and 1,000,000 kWh become 5,000,000 kg of fines. The other 95 percent is not metal. No spoil or no power, and neither client mills.
