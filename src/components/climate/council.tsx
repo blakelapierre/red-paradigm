@@ -21,11 +21,29 @@ import {
   surveyPressure,
   type World,
 } from "@/lib/climate/model";
+import {
+  DIG_DZ_CM,
+  applyDig,
+  cellCenter,
+  cellOf,
+  corruptHash,
+  createCrust,
+  crustHash,
+  floorM,
+  overrideAt,
+  proposeDig,
+  type Crust,
+} from "@/lib/crust/crust";
 
-type Pair = { canon: World; witness: World };
+type Pair = { canon: World; witness: World; canonCrust: Crust; witnessCrust: Crust };
+type CutNote = { accepted: boolean; reason: string };
 
 function fresh(): Pair {
-  return { canon: createWorld(), witness: createWorld() };
+  return { canon: createWorld(), witness: createWorld(), canonCrust: createCrust(), witnessCrust: createCrust() };
+}
+
+function formatKg(kg: bigint): string {
+  return `${kg.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} kg`;
 }
 
 function tempRgb(t: number): [number, number, number] {
@@ -58,6 +76,8 @@ export function Council() {
   const [pair, setPair] = useState<Pair>(fresh);
   const [playing, setPlaying] = useState(false);
   const [selected, setSelected] = useState(() => siteIndex("cradle"));
+  const [canonCut, setCanonCut] = useState<CutNote | null>(null);
+  const [witnessCut, setWitnessCut] = useState<CutNote | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
 
@@ -73,6 +93,7 @@ export function Council() {
       if (acc >= 0.4) {
         acc = 0;
         setPair((p) => ({
+          ...p,
           canon: step(p.canon, { fileStorm: true }),
           witness: step(p.witness, { fileStorm: false }),
         }));
@@ -90,6 +111,7 @@ export function Council() {
       if (tag === "BUTTON" || tag === "INPUT") return;
       event.preventDefault();
       setPair((p) => ({
+        ...p,
         canon: step(p.canon, { fileStorm: true }),
         witness: step(p.witness, { fileStorm: false }),
       }));
@@ -115,6 +137,7 @@ export function Council() {
       if (!ctx) return;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const world = pair.canon;
+      const worldCrust = pair.canonCrust;
       const cw = width / LON_COLS;
       const ch = height / (CELL_COUNT / LON_COLS);
       for (let i = 0; i < CELL_COUNT; i++) {
@@ -156,6 +179,13 @@ export function Council() {
           ctx.fillText(site.name, x + 6, y - 6);
         }
       }
+      ctx.fillStyle = "#d4652f";
+      for (const cut of worldCrust.overrides) {
+        const at = cellCenter(cut.ix, cut.iy);
+        const x = (at.lon / 360) * width;
+        const y = ((90 - at.lat) / 180) * height;
+        ctx.fillRect(x - 3, y - 3, 6, 6);
+      }
     };
     draw();
     const observer = new ResizeObserver(draw);
@@ -167,7 +197,6 @@ export function Council() {
   const view = inspect(world, selected);
   const hashA = stateHash(world);
   const hashB = stateHash(pair.witness);
-  const split = hashA !== hashB;
   const witnessView = inspect(pair.witness, selected);
 
   const advance = (sols: number) => {
@@ -175,6 +204,7 @@ export function Council() {
       let next = p;
       for (let i = 0; i < sols; i++) {
         next = {
+          ...next,
           canon: step(next.canon, { fileStorm: true }),
           witness: step(next.witness, { fileStorm: false }),
         };
@@ -204,7 +234,7 @@ export function Council() {
           </p>
         </div>
         <p className="max-w-3xl text-sm text-muted">
-          Datum pressure, one sol of heat, a particle release, and a storm that is a line in the log. A witness who never receives that line fails the hash.
+          Datum pressure, one sol of heat, a particle release, and a storm that is a line in the log. A former can cut one pit. The climate cell does not move.
         </p>
       </header>
 
@@ -249,6 +279,7 @@ export function Council() {
               className="min-h-11 rounded-sm bg-oxide px-3 text-sm font-medium text-bg"
               onClick={() =>
                 setPair((p) => ({
+                  ...p,
                   canon: releaseAerosol(p.canon, selected),
                   witness: releaseAerosol(p.witness, selected),
                 }))
@@ -278,6 +309,8 @@ export function Council() {
                   setPlaying(false);
                   setPair(fresh());
                   setSelected(siteIndex("cradle"));
+                  setCanonCut(null);
+                  setWitnessCut(null);
                 }}
               >
                 <RotateCcw className="size-4" aria-hidden />
@@ -288,6 +321,25 @@ export function Council() {
               Particles are iron and aluminum fines, optical depth 0.80. They halve in 40 sols. They do not move the CO₂ bar. Space advances one sol.
             </p>
           </div>
+
+          <Former
+            seedZm={view.z}
+            lat={view.lat}
+            lon={view.lon}
+            canon={pair.canonCrust}
+            witness={pair.witnessCrust}
+            canonCut={canonCut}
+            witnessCut={witnessCut}
+            onDig={() => {
+              const at = cellOf(view.lat, view.lon);
+              const op = proposeDig(pair.canonCrust, at.ix, at.iy, DIG_DZ_CM);
+              const canon = applyDig(pair.canonCrust, op);
+              const witness = applyDig(pair.witnessCrust, { ...op, beforeHash: corruptHash(op.beforeHash) });
+              setCanonCut({ accepted: canon.accepted, reason: canon.reason });
+              setWitnessCut({ accepted: witness.accepted, reason: witness.reason });
+              setPair((p) => ({ ...p, canonCrust: canon.crust, witnessCrust: witness.crust }));
+            }}
+          />
 
           <section className="rounded-sm border border-line bg-surface p-3">
             <h2 className="text-sm font-medium text-fg">Survey column</h2>
@@ -354,18 +406,84 @@ export function Council() {
           </section>
 
           <section className="rounded-sm border border-line bg-surface p-3">
-            <h2 className="flex items-center justify-between text-sm font-medium text-fg">
-              Witness
-              <span className={split ? "font-mono text-xs text-oxide" : "font-mono text-xs text-frost"}>{split ? "HASH SPLIT" : "AGREE"}</span>
-            </h2>
-            <p className="mt-1 text-xs text-muted">
-              Sol 12 files the storm. Witness B never gets that line. The hashes diverge when the record is written, before the dust peaks.
+            <h2 className="text-sm font-medium text-fg">Witness</h2>
+            <HashRow label="Climate" a={hashA} b={hashB} />
+            <HashRow label="Crust" a={crustHash(pair.canonCrust)} b={crustHash(pair.witnessCrust)} />
+            <p className="mt-2 text-xs text-muted">
+              Sol 12 files the storm. Witness B never gets that line. A dig files a before-hash. Witness B is handed a bad one, so the pit is not cut.
             </p>
-            <p className="mt-2 break-all font-mono text-xs text-fg">{hashA.slice(0, 32)}</p>
-            <p className="mt-1 break-all font-mono text-xs text-muted">{hashB.slice(0, 32)}</p>
           </section>
         </aside>
       </div>
     </main>
+  );
+}
+
+function HashRow({ label, a, b }: { label: string; a: string; b: string }) {
+  const split = a !== b;
+  return (
+    <div className="mt-2 border-t border-line pt-2">
+      <p className="flex items-center justify-between text-xs text-muted">
+        {label}
+        <span className={split ? "font-mono text-oxide" : "font-mono text-frost"}>{split ? "HASH SPLIT" : "AGREE"}</span>
+      </p>
+      <p className="mt-1 break-all font-mono text-xs text-fg">{a.slice(0, 32)}</p>
+      <p className="mt-1 break-all font-mono text-xs text-muted">{b.slice(0, 32)}</p>
+    </div>
+  );
+}
+
+function Former({
+  seedZm,
+  lat,
+  lon,
+  canon,
+  witness,
+  canonCut,
+  witnessCut,
+  onDig,
+}: {
+  seedZm: number;
+  lat: number;
+  lon: number;
+  canon: Crust;
+  witness: Crust;
+  canonCut: CutNote | null;
+  witnessCut: CutNote | null;
+  onDig: () => void;
+}) {
+  const at = cellOf(lat, lon);
+  const dz = overrideAt(canon, at.ix, at.iy);
+  const floor = floorM(seedZm, dz);
+  const delta = surveyPressure(floor) - surveyPressure(seedZm);
+  return (
+    <section className="rounded-sm border border-line bg-surface p-3">
+      <h2 className="text-sm font-medium text-fg">Former</h2>
+      <p className="mt-1 font-mono text-xs text-muted">
+        cell {at.ix}, {at.iy} · seed {seedZm} m · floor {floor} m
+      </p>
+      <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+        <div>
+          <dt className="text-xs text-muted">Spoil in the yard</dt>
+          <dd className="font-mono text-xs">{formatKg(canon.spoilKg)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted">Yard still holds</dt>
+          <dd className="font-mono text-xs">{formatKg(canon.holdKg)}</dd>
+        </div>
+      </dl>
+      <button type="button" className="mt-3 min-h-11 w-full rounded-sm bg-oxide px-3 text-sm font-medium text-bg" onClick={onDig}>
+        Dig 2 m
+      </button>
+      <p className="mt-2 text-xs text-muted">
+        One kilometer, two meters down, 3,000,000,000 kg at 1,500 kg/m³. The yard holds one cut. Witness B is given a bad before-hash and does not dig. Floor pressure moves by {delta.toFixed(2)} Pa. The climate cell does not.
+      </p>
+      <p className={`mt-2 text-xs ${canonCut?.accepted ? "text-frost" : "text-muted"}`}>
+        Canon: {canonCut ? canonCut.reason : "no cut yet"}
+      </p>
+      <p className="mt-1 text-xs text-muted">
+        Witness B: {witnessCut ? witnessCut.reason : "no cut yet"} · spoil {formatKg(witness.spoilKg)}
+      </p>
+    </section>
   );
 }
