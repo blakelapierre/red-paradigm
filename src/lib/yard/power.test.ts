@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createWorld, step } from "../climate/model.ts";
-import { createCrust, crustHash } from "../crust/crust.ts";
+import { createCrust, crustHash, setFlag } from "../crust/crust.ts";
 import { CUT_KWH, arrayKwh, closeSol, commitPoweredCut, createStocks, credit } from "./power.ts";
 
 test("one clear sol cannot pay for the cut and two sols can", () => {
@@ -57,4 +57,17 @@ test("a cut that cannot be paid does not dig, and a paid cut spends both batteri
   assert.match(again.reason, /yard cannot hold|battery cannot pay/);
   assert.equal(again.a, paid.a);
   assert.equal(again.aStocks.batteryKwh, paid.aStocks.batteryKwh);
+});
+
+test("a cut under a roof is refused for both clients", () => {
+  const crust = setFlag(createCrust(), 1, 2, "roof", 1);
+  const stocks = { ...createStocks(), batteryKwh: CUT_KWH };
+  const hash = crustHash(crust);
+  const cut = commitPoweredCut(crust, crust, stocks, stocks, 1, 2);
+  assert.equal(cut.accepted, false);
+  assert.match(cut.reason, /vessel/);
+  assert.equal(cut.aStocks.batteryKwh, CUT_KWH);
+  assert.equal(cut.bStocks.batteryKwh, CUT_KWH);
+  assert.equal(crustHash(cut.a), hash);
+  assert.equal(cut.a, crust);
 });

@@ -1,6 +1,6 @@
 import { PANEL_M2, cellLat, latIndexOf } from "../climate/constants.ts";
 import { inspect, siteIndex, step, stormTau, type World } from "../climate/model.ts";
-import { commitDig, type Crust } from "../crust/crust.ts";
+import { commitDig, flagOf, type Crust } from "../crust/crust.ts";
 import { grow } from "./biomass.ts";
 import { collectSalvage } from "./collector.ts";
 import { drawCrew } from "./crew.ts";
@@ -113,6 +113,9 @@ export function commitPoweredCut(
   ix: number,
   iy: number,
 ): { a: Crust; b: Crust; aStocks: Stocks; bStocks: Stocks; accepted: boolean; reason: string } {
+  if (flagOf(a, ix, iy, "roof") || flagOf(b, ix, iy, "roof")) {
+    return { a, b, aStocks, bStocks, accepted: false, reason: "the vessel is standing on that kilometer" };
+  }
   if (aStocks.batteryKwh < CUT_KWH || bStocks.batteryKwh < CUT_KWH) {
     return { a, b, aStocks, bStocks, accepted: false, reason: `battery cannot pay ${CUT_KWH} kWh` };
   }
