@@ -1,6 +1,7 @@
 import { PANEL_M2, cellLat, latIndexOf } from "../climate/constants.ts";
 import { inspect, siteIndex, step, stormTau, type World } from "../climate/model.ts";
 import { commitDig, flagOf, type Crust } from "../crust/crust.ts";
+import { boilMethane } from "./boil.ts";
 import { grow } from "./biomass.ts";
 import { collectSalvage } from "./collector.ts";
 import { drawCrew } from "./crew.ts";
@@ -111,7 +112,8 @@ export function closeSol(
     nextStocks = collectSalvage(nextStocks, lost, cellLat(latIndexOf(index)));
   }
   const kept = keepRoof(crust, drawCrew(nextStocks));
-  return { world: next, stocks: grow(kept.crust, kept.stocks), crust: kept.crust };
+  const boiled = boilMethane(kept.crust, kept.stocks);
+  return { world: next, stocks: grow(kept.crust, boiled), crust: kept.crust };
 }
 
 export function commitPoweredCut(
