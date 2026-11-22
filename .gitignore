@@ -1,0 +1,9 @@
+node_modules
+.grok
+.vercel
+.tanstack
+screenshots
+dist
+.env
+.env.*
+*.log
