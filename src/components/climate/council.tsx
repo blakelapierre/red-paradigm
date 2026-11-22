@@ -32,6 +32,7 @@ import {
 import { turnHash } from "@/lib/turn";
 import { commitRoof } from "@/lib/yard/roof";
 import { commitRoad } from "@/lib/yard/road";
+import { commitBerm } from "@/lib/yard/berm";
 import { commitWash } from "@/lib/yard/wash";
 import { commitBurn } from "@/lib/yard/burn";
 import { commitSabatier } from "@/lib/yard/sabatier";
@@ -465,6 +466,19 @@ export function Council() {
                 witnessStocks: laid.bStocks,
               }));
             }}
+            onBerm={() => {
+              const at = cellOf(view.lat, view.lon);
+              const built = commitBerm(pair.canonCrust, pair.witnessCrust, pair.canonStocks, pair.witnessStocks, at.ix, at.iy);
+              setCanonCut({ accepted: built.accepted, reason: built.reason });
+              setWitnessCut({ accepted: built.accepted, reason: built.reason });
+              setPair((p) => ({
+                ...p,
+                canonCrust: built.a,
+                witnessCrust: built.b,
+                canonStocks: built.aStocks,
+                witnessStocks: built.bStocks,
+              }));
+            }}
             climateAlbedoMilli={world.albedoMilli[selected]}
           />
 
@@ -587,6 +601,7 @@ function Former({
   onWash,
   onRoof,
   onRoad,
+  onBerm,
   climateAlbedoMilli,
 }: {
   seedZm: number;
@@ -608,6 +623,7 @@ function Former({
   onWash: () => void;
   onRoof: () => void;
   onRoad: () => void;
+  onBerm: () => void;
   climateAlbedoMilli: number;
 }) {
   const at = cellOf(lat, lon);
@@ -673,6 +689,9 @@ function Former({
       </button>
       <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onRoad}>
         Lay a road
+      </button>
+      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onBerm}>
+        Raise a berm
       </button>
       <p className="mt-2 font-mono text-xs text-muted">
         ice {formatKg(stocks.iceKg)} · water {formatKg(stocks.waterKg)} · O2 {formatKg(stocks.o2Kg)} · H2 {formatKg(stocks.h2Kg)} · CH4 {formatKg(stocks.ch4Kg)} · toxin {stocks.toxinMilli}
