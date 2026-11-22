@@ -19,6 +19,7 @@ The council map is a climate tick and one former, not the whole game.
 - Electrolysis of 36 kg of water for 200 kWh. It yields 4 kg of hydrogen and 32 kg of oxygen. The masses close.
 - One Sabatier batch. 8 kg of hydrogen and 50 kWh become 16 kg of methane and 36 kg of water. The planetary CO₂ bar does not move.
 - Burn 16 kg of methane with 64 kg of oxygen. Electricity is 8 kWh per kilogram of methane, 128 kWh, plus 36 kg of water back.
+- Wash the tanks. 100 kg of water and 20 kWh clear toxin 1000. A clean tank refuses the wash.
 - One turn hash over the climate record, the crust record, and the stocks. They stay together. The hash does not split.
 
 `node_modules` is not in the repo. Install, then:
