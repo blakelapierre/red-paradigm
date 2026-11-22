@@ -16,16 +16,13 @@ import {
   seasonLabel,
   siteIndex,
   stateHash,
-  step,
   stormActive,
   surveyPressure,
   type World,
 } from "@/lib/climate/model";
 import {
-  DIG_DZ_CM,
   cellCenter,
   cellOf,
-  commitDig,
   createCrust,
   crustHash,
   floorM,
@@ -33,17 +30,50 @@ import {
   type Crust,
 } from "@/lib/crust/crust";
 import { turnHash } from "@/lib/turn";
+import {
+  CUT_KWH,
+  arrayKwh,
+  closeSol,
+  commitPoweredCut,
+  createStocks,
+  type Stocks,
+} from "@/lib/yard/power";
 
-type Pair = { canon: World; witness: World; canonCrust: Crust; witnessCrust: Crust };
-type CutNote = { accepted: boolean; reason: string };
+type Pair = {
+  canon: World;
+  witness: World;
+  canonCrust: Crust;
+  witnessCrust: Crust;
+  canonStocks: Stocks;
+  witnessStocks: Stocks;
+};
 
 function fresh(): Pair {
-  return { canon: createWorld(), witness: createWorld(), canonCrust: createCrust(), witnessCrust: createCrust() };
+  return {
+    canon: createWorld(),
+    witness: createWorld(),
+    canonCrust: createCrust(),
+    witnessCrust: createCrust(),
+    canonStocks: createStocks(),
+    witnessStocks: createStocks(),
+  };
+}
+
+function closeBoth(p: Pair): Pair {
+  const canon = closeSol(p.canon, p.canonStocks);
+  const witness = closeSol(p.witness, p.witnessStocks);
+  return { ...p, canon: canon.world, witness: witness.world, canonStocks: canon.stocks, witnessStocks: witness.stocks };
 }
 
 function formatKg(kg: bigint): string {
   return `${kg.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} kg`;
 }
+
+function formatKwh(kwh: number): string {
+  return `${kwh.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} kWh`;
+}
+
+type CutNote = { accepted: boolean; reason: string };
 
 function tempRgb(t: number): [number, number, number] {
   const stops: Array<{ t: number; c: [number, number, number] }> = [
@@ -91,11 +121,7 @@ export function Council() {
       acc += dt;
       if (acc >= 0.4) {
         acc = 0;
-        setPair((p) => ({
-          ...p,
-          canon: step(p.canon, { fileStorm: true }),
-          witness: step(p.witness, { fileStorm: true }),
-        }));
+        setPair(closeBoth);
       }
       raf = requestAnimationFrame(loop);
     };
@@ -109,11 +135,7 @@ export function Council() {
       const tag = (event.target as HTMLElement | null)?.tagName;
       if (tag === "BUTTON" || tag === "INPUT") return;
       event.preventDefault();
-      setPair((p) => ({
-        ...p,
-        canon: step(p.canon, { fileStorm: true }),
-        witness: step(p.witness, { fileStorm: true }),
-      }));
+      setPair(closeBoth);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -196,20 +218,14 @@ export function Council() {
   const view = inspect(world, selected);
   const hashA = stateHash(world);
   const hashB = stateHash(pair.witness);
-  const turnA = turnHash(world, pair.canonCrust);
-  const turnB = turnHash(pair.witness, pair.witnessCrust);
+  const turnA = turnHash(world, pair.canonCrust, pair.canonStocks);
+  const turnB = turnHash(pair.witness, pair.witnessCrust, pair.witnessStocks);
   const witnessView = inspect(pair.witness, selected);
 
   const advance = (sols: number) => {
     setPair((p) => {
       let next = p;
-      for (let i = 0; i < sols; i++) {
-        next = {
-          ...next,
-          canon: step(next.canon, { fileStorm: true }),
-          witness: step(next.witness, { fileStorm: true }),
-        };
-      }
+      for (let i = 0; i < sols; i++) next = closeBoth(next);
       return next;
     });
   };
@@ -319,7 +335,7 @@ export function Council() {
               </button>
             </div>
             <p className="text-xs text-muted">
-              Particles are iron and aluminum fines, optical depth 0.80. They halve in 40 sols. They do not move the CO₂ bar. Space advances one sol.
+              Particles are iron and aluminum fines, optical depth 0.80. They halve in 40 sols. They do not move the CO₂ bar. One sol also banks the cradle array.
             </p>
           </div>
 
@@ -329,14 +345,22 @@ export function Council() {
             lon={view.lon}
             canon={pair.canonCrust}
             witness={pair.witnessCrust}
+            stocks={pair.canonStocks}
+            array={arrayKwh(world)}
             canonCut={canonCut}
             witnessCut={witnessCut}
             onDig={() => {
               const at = cellOf(view.lat, view.lon);
-              const cut = commitDig(pair.canonCrust, pair.witnessCrust, at.ix, at.iy, DIG_DZ_CM);
+              const cut = commitPoweredCut(pair.canonCrust, pair.witnessCrust, pair.canonStocks, pair.witnessStocks, at.ix, at.iy);
               setCanonCut({ accepted: cut.accepted, reason: cut.reason });
               setWitnessCut({ accepted: cut.accepted, reason: cut.reason });
-              setPair((p) => ({ ...p, canonCrust: cut.a, witnessCrust: cut.b }));
+              setPair((p) => ({
+                ...p,
+                canonCrust: cut.a,
+                witnessCrust: cut.b,
+                canonStocks: cut.aStocks,
+                witnessStocks: cut.bStocks,
+              }));
             }}
           />
 
@@ -416,7 +440,7 @@ export function Council() {
             <HashRow label="Climate" a={hashA} b={hashB} />
             <HashRow label="Crust" a={crustHash(pair.canonCrust)} b={crustHash(pair.witnessCrust)} />
             <p className="mt-2 text-xs text-muted">
-              The turn hash is the climate record and the crust record. Both clients take the same log, so the two halves do not split. A cut the yard cannot hold is refused for both.
+              The turn hash is the climate record, the crust record, and the battery. Both clients take the same log, so the halves do not split.
             </p>
           </section>
         </aside>
@@ -445,6 +469,8 @@ function Former({
   lon,
   canon,
   witness,
+  stocks,
+  array,
   canonCut,
   witnessCut,
   onDig,
@@ -454,6 +480,8 @@ function Former({
   lon: number;
   canon: Crust;
   witness: Crust;
+  stocks: Stocks;
+  array: number;
   canonCut: CutNote | null;
   witnessCut: CutNote | null;
   onDig: () => void;
@@ -477,12 +505,20 @@ function Former({
           <dt className="text-xs text-muted">Yard still holds</dt>
           <dd className="font-mono text-xs">{formatKg(canon.holdKg)}</dd>
         </div>
+        <div>
+          <dt className="text-xs text-muted">Battery</dt>
+          <dd className="font-mono text-xs">{formatKwh(stocks.batteryKwh)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted">Cradle array this sol</dt>
+          <dd className="font-mono text-xs">{formatKwh(array)}</dd>
+        </div>
       </dl>
       <button type="button" className="mt-3 min-h-11 w-full rounded-sm bg-oxide px-3 text-sm font-medium text-bg" onClick={onDig}>
         Dig 2 m
       </button>
       <p className="mt-2 text-xs text-muted">
-        One kilometer, two meters down, 3,000,000,000 kg at 1,500 kg/m³. The yard holds one cut. Both clients take it, or neither does. Floor pressure moves by {delta.toFixed(2)} Pa. The climate cell does not.
+        One kilometer, two meters down, 3,000,000,000 kg at 1,500 kg/m³. The cut costs {formatKwh(CUT_KWH)} from a 1 km² array at the Low Cradle, about 1 kWh per cubic meter. One clear sol cannot pay it. A storm sol pays tens of thousands. Both clients take the cut, or neither does. Floor pressure moves by {delta.toFixed(2)} Pa.
       </p>
       <p className={`mt-2 text-xs ${canonCut?.accepted ? "text-frost" : "text-muted"}`}>
         Order: {canonCut ? canonCut.reason : "no cut yet"}

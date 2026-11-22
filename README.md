@@ -12,8 +12,8 @@ The council map is a climate tick and one former, not the whole game.
 - One sol of heat. The equator stays cold. A winter pole falls through the CO₂ frost point.
 - A particle release. Optical depth 0.80, half gone in 40 sols. The CO₂ bar does not move.
 - An encircling storm filed on sol 12, for both clients. By sol 32 the surface sun is about 2%. Dropping that line would split the hash. This board does not drop it.
-- One former cut. A 1 km cell, 2 m down, written as an integer centimeter override. Spoil is 3,000,000,000 kg. The yard holds that once. A second cut is refused for both clients. The climate cell does not move. Two meters of pit changes floor pressure by less than 1 Pa.
-- One turn hash over both records. Climate and crust stay together. The hash does not split.
+- One former cut. A 1 km cell, 2 m down. Spoil is 3,000,000,000 kg. The yard holds that once. The cut costs 2,000,000 kWh from a 1 km² array at the Low Cradle, about 1 kWh per cubic meter. One clear sol cannot pay. A storm sol pays tens of thousands. A refused cut spends nothing, for both clients. The climate cell does not move.
+- One turn hash over the climate record, the crust record, and the battery. They stay together. The hash does not split.
 
 `node_modules` is not in the repo. Install, then:
 
