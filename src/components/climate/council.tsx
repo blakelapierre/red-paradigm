@@ -30,6 +30,7 @@ import {
   type Crust,
 } from "@/lib/crust/crust";
 import { turnHash } from "@/lib/turn";
+import { commitMill } from "@/lib/yard/mill";
 import {
   CUT_KWH,
   arrayKwh,
@@ -362,6 +363,18 @@ export function Council() {
                 witnessStocks: cut.bStocks,
               }));
             }}
+            onMill={() => {
+              const milled = commitMill(pair.canonCrust, pair.witnessCrust, pair.canonStocks, pair.witnessStocks);
+              setCanonCut({ accepted: milled.accepted, reason: milled.reason });
+              setWitnessCut({ accepted: milled.accepted, reason: milled.reason });
+              setPair((p) => ({
+                ...p,
+                canonCrust: milled.a,
+                witnessCrust: milled.b,
+                canonStocks: milled.aStocks,
+                witnessStocks: milled.bStocks,
+              }));
+            }}
           />
 
           <section className="rounded-sm border border-line bg-surface p-3">
@@ -474,6 +487,7 @@ function Former({
   canonCut,
   witnessCut,
   onDig,
+  onMill,
 }: {
   seedZm: number;
   lat: number;
@@ -485,6 +499,7 @@ function Former({
   canonCut: CutNote | null;
   witnessCut: CutNote | null;
   onDig: () => void;
+  onMill: () => void;
 }) {
   const at = cellOf(lat, lon);
   const dz = overrideAt(canon, at.ix, at.iy);
@@ -513,12 +528,21 @@ function Former({
           <dt className="text-xs text-muted">Cradle array this sol</dt>
           <dd className="font-mono text-xs">{formatKwh(array)}</dd>
         </div>
+        <div>
+          <dt className="text-xs text-muted">Fines</dt>
+          <dd className="font-mono text-xs">{formatKg(stocks.finesKg)}</dd>
+        </div>
       </dl>
-      <button type="button" className="mt-3 min-h-11 w-full rounded-sm bg-oxide px-3 text-sm font-medium text-bg" onClick={onDig}>
-        Dig 2 m
-      </button>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <button type="button" className="min-h-11 rounded-sm bg-oxide px-3 text-sm font-medium text-bg" onClick={onDig}>
+          Dig 2 m
+        </button>
+        <button type="button" className="min-h-11 rounded-sm border border-line px-3 text-sm text-fg" onClick={onMill}>
+          Mill a batch
+        </button>
+      </div>
       <p className="mt-2 text-xs text-muted">
-        One kilometer, two meters down, 3,000,000,000 kg at 1,500 kg/m³. The cut costs {formatKwh(CUT_KWH)} from a 1 km² array at the Low Cradle, about 1 kWh per cubic meter. One clear sol cannot pay it. A storm sol pays tens of thousands. Both clients take the cut, or neither does. Floor pressure moves by {delta.toFixed(2)} Pa.
+        One kilometer, two meters down, 3,000,000,000 kg at 1,500 kg/m³. The cut costs {formatKwh(CUT_KWH)}. A mill batch is 100,000,000 kg of spoil and 1,000,000 kWh, and five percent of that mass is fines. Floor pressure moves by {delta.toFixed(2)} Pa. Both clients take the order, or neither does.
       </p>
       <p className={`mt-2 text-xs ${canonCut?.accepted ? "text-frost" : "text-muted"}`}>
         Order: {canonCut ? canonCut.reason : "no cut yet"}
