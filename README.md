@@ -18,6 +18,7 @@ The council map is a climate tick and one former, not the whole game.
 - One tonne of ice. 50 kWh from a 1,000,000,000 kg lens at the cradle. The water is dirty: toxin 1000. An empty lens or an empty battery mines for neither client.
 - Electrolysis of 36 kg of water for 200 kWh. It yields 4 kg of hydrogen and 32 kg of oxygen. The masses close.
 - One Sabatier batch. 8 kg of hydrogen and 50 kWh become 16 kg of methane and 36 kg of water. The planetary CO₂ bar does not move.
+- Burn 16 kg of methane with 64 kg of oxygen. Electricity is 8 kWh per kilogram of methane, 128 kWh, plus 36 kg of water back.
 - One turn hash over the climate record, the crust record, and the stocks. They stay together. The hash does not split.
 
 `node_modules` is not in the repo. Install, then:

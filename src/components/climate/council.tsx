@@ -30,6 +30,7 @@ import {
   type Crust,
 } from "@/lib/crust/crust";
 import { turnHash } from "@/lib/turn";
+import { commitBurn } from "@/lib/yard/burn";
 import { commitSabatier } from "@/lib/yard/sabatier";
 import { commitElectrolysis } from "@/lib/yard/electrolysis";
 import { commitMine } from "@/lib/yard/ice";
@@ -423,6 +424,12 @@ export function Council() {
               setWitnessCut({ accepted: ran.accepted, reason: ran.reason });
               setPair((p) => ({ ...p, canonStocks: ran.a, witnessStocks: ran.b }));
             }}
+            onBurn={() => {
+              const burned = commitBurn(pair.canonStocks, pair.witnessStocks);
+              setCanonCut({ accepted: burned.accepted, reason: burned.reason });
+              setWitnessCut({ accepted: burned.accepted, reason: burned.reason });
+              setPair((p) => ({ ...p, canonStocks: burned.a, witnessStocks: burned.b }));
+            }}
             climateAlbedoMilli={world.albedoMilli[selected]}
           />
 
@@ -541,6 +548,7 @@ function Former({
   onMine,
   onSplit,
   onSabatier,
+  onBurn,
   climateAlbedoMilli,
 }: {
   seedZm: number;
@@ -558,6 +566,7 @@ function Former({
   onMine: () => void;
   onSplit: () => void;
   onSabatier: () => void;
+  onBurn: () => void;
   climateAlbedoMilli: number;
 }) {
   const at = cellOf(lat, lon);
@@ -611,6 +620,9 @@ function Former({
       </button>
       <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onSabatier}>
         Sabatier batch
+      </button>
+      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onBurn}>
+        Burn 16 kg methane
       </button>
       <p className="mt-2 font-mono text-xs text-muted">
         ice {formatKg(stocks.iceKg)} · water {formatKg(stocks.waterKg)} · O2 {formatKg(stocks.o2Kg)} · H2 {formatKg(stocks.h2Kg)} · CH4 {formatKg(stocks.ch4Kg)} · toxin {stocks.toxinMilli}
