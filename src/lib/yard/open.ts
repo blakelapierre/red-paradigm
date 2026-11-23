@@ -18,3 +18,9 @@ export function boilWater(crust: Crust, stocks: Stocks): Stocks {
   if (roofed(crust)) return stocks;
   return { ...stocks, waterKg: leak(stocks.waterKg, 100n) };
 }
+
+/** Hydrogen leaves faster than methane. Ten percent a sol, and at least a kilogram. An order of magnitude. */
+export function ventHydrogen(crust: Crust, stocks: Stocks): Stocks {
+  if (roofed(crust)) return stocks;
+  return { ...stocks, h2Kg: leak(stocks.h2Kg, 10n) };
+}
