@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createTable, closeTable, seatSite } from "./table.ts";
+import { bothSealed, closeIfSealed, closeTable, createTable, sealSeat, seatSite } from "./table.ts";
+import { DEFAULT_AIMS } from "./governor.ts";
 import { closeSol, createStocks } from "./power.ts";
 import { createCrust } from "../crust/crust.ts";
 import { createWorld } from "../climate/model.ts";
@@ -34,4 +35,17 @@ test("the shared climate steps once, and each yard banks its own sun", () => {
   const twice = closeSol(closeSol(createWorld(), createStocks(), createCrust()).world, createStocks(), createCrust());
   assert.equal(twice.world.sol, 2);
   assert.notEqual(closed.climate.sol, twice.world.sol);
+});
+
+test("the sol does not close until both yards have sealed it", () => {
+  const one = sealSeat(createTable(), "cradle", DEFAULT_AIMS);
+  assert.equal(bothSealed(one), false);
+  assert.equal(closeIfSealed(one).closed, false);
+  assert.equal(closeIfSealed(one).table.climate.sol, 0);
+  const both = sealSeat(one, "works", DEFAULT_AIMS);
+  const closed = closeIfSealed(both);
+  assert.equal(closed.closed, true);
+  assert.equal(closed.table.climate.sol, 1);
+  assert.equal(closed.table.cradle.sealedSol, null);
+  assert.equal(closed.table.works.sealedSol, null);
 });

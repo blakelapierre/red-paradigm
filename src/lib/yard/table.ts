@@ -82,3 +82,21 @@ export function closeTable(table: Table): Table {
     works: liveYard(table.climate, climate, table.witness, witness, table.works, siteIndex("works")),
   };
 }
+
+export function sealSeat(table: Table, seat: SeatId, aims: readonly Aim[]): Table {
+  const row = table[seat];
+  return {
+    ...table,
+    [seat]: { ...row, aims: aims.map((aim) => ({ ...aim })), sealedSol: table.climate.sol },
+  };
+}
+
+export function bothSealed(table: Table): boolean {
+  return table.cradle.sealedSol === table.climate.sol && table.works.sealedSol === table.climate.sol;
+}
+
+/** The sol stays open until both yards have sealed it. */
+export function closeIfSealed(table: Table): { table: Table; closed: boolean } {
+  if (!bothSealed(table)) return { table, closed: false };
+  return { table: closeTable(table), closed: true };
+}
