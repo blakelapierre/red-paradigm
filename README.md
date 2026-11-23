@@ -18,7 +18,7 @@ The council map is a climate tick and one former, not the whole game.
 - One painted kilometer. 50,000 kg of fines, albedo 0.10 on that cell only. A 5° climate cell does not move. Both clients paint, or neither does.
 - One tonne of ice. 50 kWh from a 1,000,000,000 kg lens at the cradle. The water is dirty: toxin 1000. Below 612 Pa the order refuses. That site is vapor, and this board will not bottle it. An empty lens or an empty battery mines for neither client.
 - Electrolysis of 36 kg of water for 200 kWh. It yields 4 kg of hydrogen and 32 kg of oxygen. The masses close. Toxin 1000 refuses the split. Wash the tanks first.
-- One Sabatier batch. 8 kg of hydrogen and 50 kWh become 16 kg of methane and 36 kg of water. The planetary CO₂ bar does not move.
+- One Sabatier batch. 8 kg of hydrogen, 44 kg from the CO2 bottle, and 50 kWh become 16 kg of methane and 36 kg of water. The masses close. The planetary CO₂ bar does not move.
 - A CO2 bottle. 30 kWh sets aside 44 kg, the mass one Sabatier batch will ask for. The bottle holds 440 kg. The air mass does not move.
 - Burn 16 kg of methane with 64 kg of oxygen. Electricity is 8 kWh per kilogram of methane, 128 kWh, plus 36 kg of water back.
 - Wash the tanks. 100 kg of water and 20 kWh clear toxin 1000. That water becomes brine. It is not clean water again. A clean tank refuses the wash.
