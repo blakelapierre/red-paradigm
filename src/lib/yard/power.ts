@@ -39,6 +39,7 @@ export type Stocks = {
   drawnKg: number;
   heatKwh: number;
   radiator: number;
+  co2Kg: bigint;
 };
 
 export function createStocks(): Stocks {
@@ -62,6 +63,7 @@ export function createStocks(): Stocks {
     drawnKg: 0,
     heatKwh: 0,
     radiator: 0,
+    co2Kg: 0n,
   };
 }
 
@@ -76,7 +78,7 @@ export function credit(stocks: Stocks, kwh: number): Stocks {
 }
 
 export function stocksBytes(stocks: Stocks): Uint8Array {
-  const bytes = new Uint8Array(108);
+  const bytes = new Uint8Array(116);
   const view = new DataView(bytes.buffer);
   bytes.set([0x50, 0x57, 0x52, 0x31]);
   view.setUint32(4, stocks.batteryKwh);
@@ -105,6 +107,8 @@ export function stocksBytes(stocks: Stocks): Uint8Array {
   view.setUint32(96, stocks.drawnKg >>> 0);
   view.setUint32(100, stocks.heatKwh >>> 0);
   view.setUint32(104, stocks.radiator >>> 0);
+  view.setUint32(108, Number((stocks.co2Kg >> 32n) & 0xffffffffn));
+  view.setUint32(112, Number(stocks.co2Kg & 0xffffffffn));
   return bytes;
 }
 

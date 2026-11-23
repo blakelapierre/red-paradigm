@@ -44,6 +44,7 @@ import { commitBurn } from "@/lib/yard/burn";
 import { commitSabatier } from "@/lib/yard/sabatier";
 import { commitElectrolysis } from "@/lib/yard/electrolysis";
 import { commitMine } from "@/lib/yard/ice";
+import { commitCompress } from "@/lib/yard/compress";
 import { commitMill } from "@/lib/yard/mill";
 import { commitDump } from "@/lib/yard/dump";
 import { commitPaint } from "@/lib/yard/paint";
@@ -442,6 +443,12 @@ export function Council() {
               setWitnessCut({ accepted: mined.accepted, reason: mined.reason });
               setPair((p) => ({ ...p, canonStocks: mined.a, witnessStocks: mined.b }));
             }}
+            onCompress={() => {
+              const bottled = commitCompress(pair.canonStocks, pair.witnessStocks, pair.canon);
+              setCanonCut({ accepted: bottled.accepted, reason: bottled.reason });
+              setWitnessCut({ accepted: bottled.accepted, reason: bottled.reason });
+              setPair((p) => ({ ...p, canonStocks: bottled.a, witnessStocks: bottled.b }));
+            }}
             onSplit={() => {
               const split = commitElectrolysis(pair.canonStocks, pair.witnessStocks);
               setCanonCut({ accepted: split.accepted, reason: split.reason });
@@ -658,6 +665,7 @@ function Former({
   onDump,
   onPaint,
   onMine,
+  onCompress,
   onSplit,
   onSabatier,
   onBurn,
@@ -687,6 +695,7 @@ function Former({
   onDump: () => void;
   onPaint: () => void;
   onMine: () => void;
+  onCompress: () => void;
   onSplit: () => void;
   onSabatier: () => void;
   onBurn: () => void;
@@ -755,6 +764,9 @@ function Former({
       <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onMine}>
         Mine 1 t ice
       </button>
+      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onCompress}>
+        Bottle 44 kg CO2
+      </button>
       <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onSplit}>
         Electrolyze 36 kg
       </button>
@@ -795,7 +807,7 @@ function Former({
         Raise a radiator
       </button>
       <p className="mt-2 font-mono text-xs text-muted">
-        ice {formatKg(stocks.iceKg)} · water {formatKg(stocks.waterKg)} · brine {formatKg(stocks.brineKg)} · O2 {formatKg(stocks.o2Kg)} · H2 {formatKg(stocks.h2Kg)} · CH4 {formatKg(stocks.ch4Kg)} · toxin {stocks.toxinMilli} · debt {stocks.debt ? "owed" : "clear"} · biomass {stocks.biomassG} g · collector {stocks.collector ? "up" : "down"} · health {stocks.healthMilli}/1000 · reactor {stocks.reactor ? "on" : "off"} · cabin +{stocks.cabinRiseK} K · column {stocks.drawnKg}/10000 kg · heat {stocks.heatKwh} kWh · radiator {stocks.radiator ? "up" : "down"}
+        ice {formatKg(stocks.iceKg)} · water {formatKg(stocks.waterKg)} · brine {formatKg(stocks.brineKg)} · O2 {formatKg(stocks.o2Kg)} · H2 {formatKg(stocks.h2Kg)} · CO2 {formatKg(stocks.co2Kg)} · CH4 {formatKg(stocks.ch4Kg)} · toxin {stocks.toxinMilli} · debt {stocks.debt ? "owed" : "clear"} · biomass {stocks.biomassG} g · collector {stocks.collector ? "up" : "down"} · health {stocks.healthMilli}/1000 · reactor {stocks.reactor ? "on" : "off"} · cabin +{stocks.cabinRiseK} K · column {stocks.drawnKg}/10000 kg · heat {stocks.heatKwh} kWh · radiator {stocks.radiator ? "up" : "down"}
       </p>
       <p className="mt-2 text-xs text-muted">
         Each sol takes 1 kg of oxygen and 3 kg of water. If either is short, the sol is owed and neither is spent. Dirty water is not split. Wash the tanks first. A roof costs 10,000 kWh that same sol. If the battery cannot pay, every roof comes down. Under a standing roof, with clean water and no debt, one gram of biomass grows and one kilogram of water is spent. The air mass does not move. A collector costs 30,000 kg of fines. On a stripping sol it returns a tenth of the particle mass that left this array's climate cell. Five grams per square meter per optical depth is an order of magnitude. A clear sol returns nothing. A stripping sol also takes 10/1000 off the array after that sol's power is banked. Repair spends 10,000 kg of fines to put 100/1000 back. Methane in the open loses 1 percent a sol, and at least 1 kg when the tank is smaller than 100 kg. Open water does the same. Open hydrogen loses 10 percent. Open oxygen loses 1 percent. A standing roof holds them. Heating that vessel costs 10,000 kWh per kelvin, up to 40 K above the yard. The climate cell does not move. Drawing water takes 1 kg and 50 kWh from a column of about 10,000 kg over this kilometer. At 10,000 kg the order refuses. The air mass does not move. About 40 kWh of each 200 kWh split does not stay in the hydrogen. Past 80 kWh the cell waits. The open yard sheds 40 kWh a sol. A radiator costs 20,000 kg of fines and sheds 200.
