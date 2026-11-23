@@ -9,7 +9,7 @@ import { MILL_FINES_KG } from "./mill.ts";
 import { LOFT_KWH } from "./release.ts";
 import { CRADLE_CELL } from "./cable.ts";
 import { DEFAULT_AIMS, bankSols, moveAim, toggleAim, workList, type WorkSite, type Yard } from "./governor.ts";
-import { CUT_KWH, createStocks } from "./power.ts";
+import { CUT_KWH, closeSol, createStocks } from "./power.ts";
 import { ROOF_FINES_KG, ROOF_KWH } from "./roof.ts";
 
 function cradleSite(world = createWorld()): WorkSite {
@@ -266,6 +266,30 @@ test("a finished floor does not loft", () => {
   assert.equal(worked.yard.canonStocks.finesKg, MILL_FINES_KG);
   assert.equal(worked.yard.canonStocks.batteryKwh, LOFT_KWH);
   assert.equal(worked.yard.canonCrust.spoilKg, 0n);
+});
+
+test("a fallen roof is raised again", () => {
+  const site = cradleSite();
+  const roof = setFlag(createCrust(), site.ix, site.iy, "roof", 1);
+  const dark = { ...createStocks(), healthMilli: 0, batteryKwh: 0 };
+  const fell = closeSol(createWorld(), dark, roof);
+  const other = closeSol(createWorld(), dark, roof);
+  assert.equal(fell.crust.overrides.some((row) => row.roof === 1), false);
+  const yard = freshYard();
+  yard.canon = fell.world;
+  yard.witness = other.world;
+  yard.canonCrust = fell.crust;
+  yard.witnessCrust = other.crust;
+  const paid = { ...fell.stocks, finesKg: ROOF_FINES_KG, batteryKwh: ROOF_KWH };
+  const paidB = { ...other.stocks, finesKg: ROOF_FINES_KG, batteryKwh: ROOF_KWH };
+  yard.canonStocks = paid;
+  yard.witnessStocks = paidB;
+  const aims = DEFAULT_AIMS.map((aim) => ({ ...aim, on: aim.id === "shelter" }));
+  const worked = workList(yard, aims, site);
+  assert.ok(worked.landed.some((line) => line.startsWith("roof up")));
+  assert.equal(worked.yard.canonCrust.overrides.some((row) => row.roof === 1), true);
+  assert.equal(worked.yard.witnessCrust.overrides.some((row) => row.roof === 1), true);
+  agree(worked.yard);
 });
 
 
