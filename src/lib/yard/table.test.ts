@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { bothSealed, closeIfSealed, closeTable, createTable, publicFace, reduceTable, replaySeals, runSeat, sealSeat, seatFromSearch, seatSite, stormVerdict, tableHash, tableWanted, WORKS_FINES_KG } from "./table.ts";
+import { bothSealed, closeIfSealed, closeTable, createTable, publicFace, reduceTable, replaySeals, runSeat, sealSeat, seatFromSearch, seatSite, splitLine, stormVerdict, tableHash, tableWanted, WORKS_AIMS, WORKS_FINES_KG } from "./table.ts";
 import { DEFAULT_AIMS } from "./governor.ts";
 import { CUT_KWH, closeSol, createStocks, stocksBytes } from "./power.ts";
 import { createWorld } from "../climate/model.ts";
@@ -21,8 +21,8 @@ test("a table is two yards and one climate", () => {
   const works = seatSite(table.climate, "works");
   assert.notEqual(cradle.climateIndex, works.climateIndex);
   assert.notEqual(cradle.ix, works.ix);
-  table.cradle.aims[0].on = false;
-  assert.equal(table.works.aims[0].on, true);
+  table.cradle.aims[0].on = true;
+  assert.equal(table.works.aims[0].on, false);
 });
 
 test("the shared climate steps once, and each yard banks its own sun", () => {
@@ -238,4 +238,32 @@ test("after the storm the score is one held, both held, or both dark", () => {
   dark.cradle.stocks = { ...dark.cradle.stocks, stormSeen: 1, stormBroke: 1 };
   dark.works.stocks = { ...dark.works.stocks, stormSeen: 1, stormBroke: 1 };
   assert.equal(stormVerdict(dark), "Both yards went dark.");
+});
+
+test("the works list is not the cradle list", () => {
+  const table = createTable();
+  assert.equal(table.cradle.aims.find((aim) => aim.id === "power")?.on, true);
+  assert.equal(table.works.aims.find((aim) => aim.id === "power")?.on, false);
+  assert.equal(table.works.aims.find((aim) => aim.id === "cut")?.on, false);
+  assert.equal(table.works.aims.find((aim) => aim.id === "mill")?.on, false);
+  assert.equal(table.works.aims.find((aim) => aim.id === "shelter")?.on, true);
+  assert.equal(WORKS_AIMS.find((aim) => aim.id === "veil")?.on, false);
+  const before = table.cradle.stocks.finesKg;
+  const ran = runSeat(table, "works");
+  assert.equal(ran.table.cradle.stocks.finesKg, before);
+  assert.equal(ran.table.works.stocks.reactor, 1);
+  assert.equal(ran.table.works.crust.spoilKg, 0n);
+  assert.ok(ran.table.works.stocks.finesKg > 0n);
+});
+
+test("a bad table is named, and it is not applied", () => {
+  assert.equal(splitLine(false), null);
+  assert.equal(splitLine(true), "HASH SPLIT. This window did not take that table.");
+  const sealed = reduceTable(
+    { table: createTable(), split: false, waiting: false },
+    { type: "seal", seat: "cradle", aims: DEFAULT_AIMS.map((aim) => ({ ...aim })), sol: 0 },
+  );
+  const lied = reduceTable(sealed, { type: "table", table: createTable(), hash: "nope" });
+  assert.equal(splitLine(lied.split), "HASH SPLIT. This window did not take that table.");
+  assert.equal(lied.table.cradle.sealedSol, 0);
 });

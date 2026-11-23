@@ -48,11 +48,14 @@ import {
   reduceTable,
   replaySeals,
   seatFromSearch,
+  splitLine,
   stormVerdict,
   tableWanted,
+  WORKS_AIMS,
   type SeatId,
   type SealMsg,
   type Table,
+  type TableMsg,
   type TableState,
 } from "@/lib/yard/table";
 import { commitRoof } from "@/lib/yard/roof";
@@ -253,6 +256,7 @@ export function Council() {
   const seatRef = useRef(seat);
   const pairRef = useRef(pair);
   const soloRef = useRef<Pair | null>(null);
+  const soloAimsRef = useRef<Aim[] | null>(null);
   const channelRef = useRef<BroadcastChannel | null>(null);
   aimsRef.current = aims;
   followRef.current = follow;
@@ -280,15 +284,18 @@ export function Council() {
     if (!on) {
       setTableOn(false);
       if (soloRef.current) setPair(soloRef.current);
+      if (soloAimsRef.current) setAims(soloAimsRef.current);
       return;
     }
     soloRef.current = pairRef.current;
+    soloAimsRef.current = aimsRef.current.map((aim) => ({ ...aim }));
     const who: SeatId = typeof window === "undefined" ? "cradle" : seatFromSearch(window.location.search);
     const state = replaySeals(readSeals());
     setSeat(who);
     setTableState(state);
     setPair(pairFrom(state.table, who, pairRef.current));
     setSelected(siteIndex(who));
+    if (who === "works") setAims(WORKS_AIMS.map((aim) => ({ ...aim })));
     setTableOn(true);
   };
 
@@ -328,11 +335,13 @@ export function Council() {
     const channel = new BroadcastChannel("red-paradigm-table");
     channelRef.current = channel;
     channel.onmessage = (event: MessageEvent) => {
-      const msg = event.data as SealMsg | undefined;
-      if (!msg || msg.type !== "seal" || msg.seat === seatRef.current) return;
+      const msg = event.data as { type?: string; seat?: SeatId; sol?: number } | undefined;
+      if (!msg || (msg.type !== "seal" && msg.type !== "table")) return;
+      if (msg.type === "seal" && msg.seat === seatRef.current) return;
       setTableState((prev) => {
-        if (!prev || msg.sol !== prev.table.climate.sol) return prev;
-        return reduceTable(prev, msg);
+        if (!prev) return prev;
+        if (msg.type === "seal" && msg.sol !== prev.table.climate.sol) return prev;
+        return reduceTable(prev, msg as TableMsg);
       });
     };
     return () => {
@@ -589,7 +598,8 @@ export function Council() {
                   . {tableState.waiting ? "Waiting for the other yard." : "Both yards have sealed this sol."}
                   {publicFace(tableState.table).cradleThrough ? " The Low Cradle held through the storm." : ""}
                   {publicFace(tableState.table).worksThrough ? " The Works held through the storm." : ""}
-                  {stormVerdict(tableState.table) ? ` ${stormVerdict(tableState.table)}` : ""} Leave the table and this
+                  {stormVerdict(tableState.table) ? ` ${stormVerdict(tableState.table)}` : ""}
+                  {splitLine(tableState.split) ? ` ${splitLine(tableState.split)}` : ""} Leave the table and this
                   board runs alone.
                 </p>
               ) : null}

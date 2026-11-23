@@ -30,13 +30,18 @@ export type Table = {
 /** One mill of fines and a reactor. Ahead of the cradle, not already holding. */
 export const WORKS_FINES_KG = 5_000_000n;
 
-function freshSeat(seed: Stocks = createStocks()): SeatYard {
+/** The works already has a reactor. It does not cut or mill the head start away, and it does not loft. */
+export const WORKS_AIMS: readonly Aim[] = DEFAULT_AIMS.map((aim) =>
+  aim.id === "power" || aim.id === "cut" || aim.id === "mill" || aim.id === "veil" ? { ...aim, on: false } : { ...aim },
+);
+
+function freshSeat(seed: Stocks = createStocks(), aims: readonly Aim[] = DEFAULT_AIMS): SeatYard {
   return {
     crust: createCrust(),
     witnessCrust: createCrust(),
     stocks: seed,
     witnessStocks: { ...seed },
-    aims: DEFAULT_AIMS.map((aim) => ({ ...aim })),
+    aims: aims.map((aim) => ({ ...aim })),
     sealedSol: null,
   };
 }
@@ -47,7 +52,7 @@ export function createTable(): Table {
     climate: createWorld(),
     witness: createWorld(),
     cradle: freshSeat(),
-    works: freshSeat(works),
+    works: freshSeat(works, WORKS_AIMS),
   };
 }
 
@@ -188,6 +193,11 @@ export function reduceTable(state: TableState, msg: TableMsg): TableState {
 
 export function replaySeals(seals: readonly SealMsg[]): TableState {
   return seals.reduce<TableState>(reduceTable, { table: createTable(), split: false, waiting: false });
+}
+
+export function splitLine(split: boolean): string | null {
+  if (!split) return null;
+  return "HASH SPLIT. This window did not take that table.";
 }
 
 export type FaceBit = "held" | "dark";
