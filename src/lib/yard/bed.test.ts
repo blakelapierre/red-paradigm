@@ -3,8 +3,10 @@ import { test } from "node:test";
 import { airKg, createWorld } from "../climate/model.ts";
 import { createCrust, setFlag } from "../crust/crust.ts";
 import { turnHash } from "../turn.ts";
-import { BED_FINES_KG, commitPlant } from "./bed.ts";
+import { BED_CAP, BED_FINES_KG, commitPlant } from "./bed.ts";
 import { grow } from "./biomass.ts";
+import { RATION_G } from "./food.ts";
+import { LAMP_G } from "./lamp.ts";
 import { createStocks, stocksBytes } from "./power.ts";
 
 test("the yard starts with one bed, and the count is in the stocks hash", () => {
@@ -58,4 +60,19 @@ test("a bed is planted for both clients, or for neither", () => {
   const hashB = turnHash(world, roof, createStocks());
   assert.equal(turnHash(world, roof, split.a), hashA);
   assert.equal(turnHash(world, roof, split.b), hashB);
+});
+
+test("the twenty-sixth bed is refused", () => {
+  assert.equal(BED_CAP, 25);
+  assert.equal(BED_CAP * LAMP_G, RATION_G);
+  const roof = setFlag(createCrust(), 1, 2, "roof", 1);
+  const full = { ...createStocks(), beds: BED_CAP, finesKg: BED_FINES_KG };
+  const refused = commitPlant(roof, roof, full, full);
+  assert.equal(refused.accepted, false);
+  assert.equal(refused.a.beds, BED_CAP);
+  assert.equal(refused.a.finesKg, BED_FINES_KG);
+  const uneven = commitPlant(roof, roof, { ...createStocks(), beds: BED_CAP - 1, finesKg: BED_FINES_KG }, full);
+  assert.equal(uneven.accepted, false);
+  assert.equal(uneven.a.beds, BED_CAP - 1);
+  assert.equal(uneven.b.beds, BED_CAP);
 });
