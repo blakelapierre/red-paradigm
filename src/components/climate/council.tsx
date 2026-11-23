@@ -401,7 +401,7 @@ export function Council() {
                 Yard: {pair.log[pair.log.length - 1]}
               </p>
             ) : null}
-            {turnA === turnB && pair.canonStocks.heldSols > 0 ? (
+            {turnA === turnB ? (
               <p className={`mt-1 text-sm ${kilometerHolds(pair.canonStocks) ? "text-frost" : "text-muted"}`}>
                 {kilometerHolds(pair.canonStocks)
                   ? `This kilometer has held for ${pair.canonStocks.heldSols} sols. The climate cell did not move.`
