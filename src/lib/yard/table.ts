@@ -27,23 +27,27 @@ export type Table = {
   works: SeatYard;
 };
 
-function freshSeat(): SeatYard {
+/** One mill of fines and a reactor. Ahead of the cradle, not already holding. */
+export const WORKS_FINES_KG = 5_000_000n;
+
+function freshSeat(seed: Stocks = createStocks()): SeatYard {
   return {
     crust: createCrust(),
     witnessCrust: createCrust(),
-    stocks: createStocks(),
-    witnessStocks: createStocks(),
+    stocks: seed,
+    witnessStocks: { ...seed },
     aims: DEFAULT_AIMS.map((aim) => ({ ...aim })),
     sealedSol: null,
   };
 }
 
 export function createTable(): Table {
+  const works = { ...createStocks(), reactor: 1, finesKg: WORKS_FINES_KG };
   return {
     climate: createWorld(),
     witness: createWorld(),
     cradle: freshSeat(),
-    works: freshSeat(),
+    works: freshSeat(works),
   };
 }
 

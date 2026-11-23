@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { bothSealed, closeIfSealed, closeTable, createTable, publicFace, runSeat, sealSeat, seatSite, tableHash } from "./table.ts";
+import { bothSealed, closeIfSealed, closeTable, createTable, publicFace, runSeat, sealSeat, seatSite, tableHash, WORKS_FINES_KG } from "./table.ts";
 import { DEFAULT_AIMS } from "./governor.ts";
 import { CUT_KWH, closeSol, createStocks, stocksBytes } from "./power.ts";
 import { createWorld } from "../climate/model.ts";
@@ -107,7 +107,7 @@ test("a loft writes the shared climate for both copies, or for neither", () => {
   const ran = runSeat(table, "cradle", site);
   assert.ok(ran.table.climate.tauAerMilli[site.climateIndex] > 0);
   assert.equal(ran.table.climate.tauAerMilli[site.climateIndex], ran.table.witness.tauAerMilli[site.climateIndex]);
-  assert.equal(ran.table.works.stocks.finesKg, 0n);
+  assert.equal(ran.table.works.stocks.finesKg, WORKS_FINES_KG);
   assert.ok(ran.table.cradle.stocks.finesKg < MILL_FINES_KG);
 
   const capped = createTable();
@@ -121,4 +121,15 @@ test("a loft writes the shared climate for both copies, or for neither", () => {
   assert.equal(heldBack.table.climate.tauAerMilli[site.climateIndex], 0);
   assert.equal(heldBack.table.cradle.stocks.finesKg, MILL_FINES_KG);
   assert.equal(heldBack.table.cradle.stocks.batteryKwh, LOFT_KWH);
+});
+
+test("the works starts with a reactor and fines, and it is not already holding", () => {
+  const table = createTable();
+  assert.equal(table.cradle.stocks.reactor, 0);
+  assert.equal(table.cradle.stocks.finesKg, 0n);
+  assert.equal(table.works.stocks.reactor, 1);
+  assert.equal(table.works.witnessStocks.finesKg, WORKS_FINES_KG);
+  assert.equal(table.works.stocks.biomassG, 0);
+  assert.equal(publicFace(table).works, "dark");
+  assert.equal(publicFace(table).cradle, "dark");
 });
