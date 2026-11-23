@@ -51,6 +51,11 @@ export function createTable(): Table {
   };
 }
 
+export function seatFromSearch(search: string): SeatId {
+  const raw = search.startsWith("?") ? search.slice(1) : search;
+  return new URLSearchParams(raw).get("seat") === "works" ? "works" : "cradle";
+}
+
 export function seatSite(world: World, seat: SeatId): WorkSite {
   const index = siteIndex(seat);
   const lat = cellLat(latIndexOf(index));

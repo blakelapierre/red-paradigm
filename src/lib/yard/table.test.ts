@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { bothSealed, closeIfSealed, closeTable, createTable, publicFace, runSeat, sealSeat, seatSite, tableHash, WORKS_FINES_KG } from "./table.ts";
+import { bothSealed, closeIfSealed, closeTable, createTable, publicFace, runSeat, sealSeat, seatFromSearch, seatSite, tableHash, WORKS_FINES_KG } from "./table.ts";
 import { DEFAULT_AIMS } from "./governor.ts";
 import { CUT_KWH, closeSol, createStocks, stocksBytes } from "./power.ts";
 import { createWorld } from "../climate/model.ts";
@@ -147,4 +147,12 @@ test("the list cannot be pointed at the other yard", () => {
   assert.equal(ran.table.works.crust.spoilKg, 0n);
   assert.equal(ran.table.cradle.stocks.batteryKwh, CUT_KWH);
   assert.equal(ran.table.works.stocks.finesKg, before);
+});
+
+test("the cradle is the default seat, and works is a query", () => {
+  assert.equal(seatFromSearch(""), "cradle");
+  assert.equal(seatFromSearch("?table=1"), "cradle");
+  assert.equal(seatFromSearch("?seat=cradle"), "cradle");
+  assert.equal(seatFromSearch("?seat=works"), "works");
+  assert.equal(seatFromSearch("table=1&seat=works"), "works");
 });
