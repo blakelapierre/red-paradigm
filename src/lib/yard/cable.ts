@@ -6,6 +6,8 @@ import { type Stocks } from "./power.ts";
 /** The kilometer the board digs when the Low Cradle climate cell is selected. Not the site pin, which sits off that cell's center. */
 const cradleIndex = siteIndex("cradle");
 export const CRADLE_CELL = cellOf(cellLat(latIndexOf(cradleIndex)), cellLon(lonIndexOf(cradleIndex)));
+const worksIndex = siteIndex("works");
+export const WORKS_CELL = cellOf(cellLat(latIndexOf(worksIndex)), cellLon(lonIndexOf(worksIndex)));
 
 /** One tonne of fines per kilometer of line. An order of magnitude for a conductor, not a catalog. */
 export const KG_PER_KM = 1000n;
@@ -21,9 +23,13 @@ export function commitCable(
   b: Stocks,
   ix: number,
   iy: number,
+  home: "cradle" | "works" = "cradle",
 ): { a: Stocks; b: Stocks; accepted: boolean; reason: string } {
   const same = { a, b, accepted: false };
-  if (ix === CRADLE_CELL.ix && iy === CRADLE_CELL.iy) return { ...same, reason: "the array is already on this kilometer" };
+  const own = home === "works" ? WORKS_CELL : CRADLE_CELL;
+  const other = home === "works" ? CRADLE_CELL : WORKS_CELL;
+  if (ix === other.ix && iy === other.iy) return { ...same, reason: "that kilometer is the other yard" };
+  if (ix === own.ix && iy === own.iy) return { ...same, reason: "the array is already on this kilometer" };
   if ((a.cableOn && a.cableIx === ix && a.cableIy === iy) || (b.cableOn && b.cableIx === ix && b.cableIy === iy)) {
     return { ...same, reason: "this kilometer is already wired" };
   }

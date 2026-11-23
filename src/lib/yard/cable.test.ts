@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createWorld, stateHash } from "../climate/model.ts";
 import { createCrust } from "../crust/crust.ts";
-import { CRADLE_CELL, cableKm, commitCable } from "./cable.ts";
+import { CRADLE_CELL, WORKS_CELL, cableKm, commitCable } from "./cable.ts";
 import { CUT_KWH, commitPoweredCut, createStocks } from "./power.ts";
 
 test("a cut off the cradle needs a line, and the line is a tonne per kilometer", () => {
@@ -27,4 +27,18 @@ test("a cut off the cradle needs a line, and the line is a tonne per kilometer",
   assert.equal(stateHash(world), hash);
   const cradle = commitPoweredCut(createCrust(), createCrust(), rich, rich, CRADLE_CELL.ix, CRADLE_CELL.iy);
   assert.equal(cradle.accepted, true);
+});
+
+test("a cable cannot land on the other yard's home kilometer", () => {
+  const rich = { ...createStocks(), finesKg: 1_000_000n };
+  const fromCradle = commitCable(rich, rich, WORKS_CELL.ix, WORKS_CELL.iy, "cradle");
+  assert.equal(fromCradle.accepted, false);
+  assert.equal(fromCradle.reason, "that kilometer is the other yard");
+  assert.equal(fromCradle.a.finesKg, rich.finesKg);
+  const fromWorks = commitCable(rich, rich, CRADLE_CELL.ix, CRADLE_CELL.iy, "works");
+  assert.equal(fromWorks.accepted, false);
+  assert.equal(fromWorks.reason, "that kilometer is the other yard");
+  const own = commitCable(rich, rich, WORKS_CELL.ix, WORKS_CELL.iy, "works");
+  assert.equal(own.accepted, false);
+  assert.equal(own.reason, "the array is already on this kilometer");
 });
