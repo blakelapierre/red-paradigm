@@ -8,6 +8,7 @@ import { BED_FINES_KG } from "./bed.ts";
 import { CRADLE_CELL } from "./cable.ts";
 import { DEFAULT_AIMS, bankSols, moveAim, toggleAim, workList, type WorkSite, type Yard } from "./governor.ts";
 import { CUT_KWH, createStocks } from "./power.ts";
+import { ROOF_FINES_KG, ROOF_KWH } from "./roof.ts";
 
 function cradleSite(world = createWorld()): WorkSite {
   const index = siteIndex("cradle");
@@ -231,6 +232,21 @@ test("a stocked cabin is not split, and a hot yard is not split", () => {
   assert.equal(refused.yard.canonStocks.o2Kg, 0n);
   assert.equal(refused.yard.canonStocks.heatKwh, 80);
 });
+
+test("an open hold pays the roof before a cut", () => {
+  const site = cradleSite();
+  const yard = freshYard();
+  const battery = CUT_KWH + ROOF_KWH - 1;
+  const stocks = { ...yard.canonStocks, batteryKwh: battery, finesKg: ROOF_FINES_KG };
+  yard.canonStocks = stocks;
+  yard.witnessStocks = stocks;
+  const aims = DEFAULT_AIMS.map((aim) => ({ ...aim, on: aim.id === "cut" || aim.id === "shelter" }));
+  const worked = workList(yard, aims, site);
+  assert.equal(worked.yard.canonCrust.spoilKg, 0n);
+  assert.equal(worked.yard.canonCrust.overrides.some((row) => row.roof === 1), true);
+  assert.equal(worked.yard.witnessCrust.spoilKg, 0n);
+});
+
 
 
 

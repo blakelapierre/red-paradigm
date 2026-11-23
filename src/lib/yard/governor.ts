@@ -25,7 +25,7 @@ import { commitRoof } from "./roof.ts";
 import { commitSabatier } from "./sabatier.ts";
 import { commitVent } from "./vent.ts";
 import { commitWash } from "./wash.ts";
-import { kilometerHolds } from "./hold.ts";
+import { cradleHolding, kilometerHolds } from "./hold.ts";
 
 /** A general aim. The buttons still issue one order. The list is not a second physics. */
 export type AimId = "power" | "cut" | "mill" | "shelter" | "ration" | "water" | "fuel" | "column" | "veil" | "ground" | "array";
@@ -205,12 +205,22 @@ export function workList(
   let next = yard;
   const floored =
     floorReady(yard.canonCrust, yard.canonStocks) && floorReady(yard.witnessCrust, yard.witnessStocks);
-  for (const aim of aims) {
-    if (!aim.on) continue;
+  const holding = cradleHolding(yard.canonCrust, yard.canonStocks) && cradleHolding(yard.witnessCrust, yard.witnessStocks);
+  for (const aim of passAims(aims, holding)) {
     if (floored && (aim.id === "cut" || aim.id === "mill")) continue;
     next = runAim(next, aim.id, site, landed);
   }
   return { yard: next, landed };
+}
+
+const LEAD: readonly AimId[] = ["power", "shelter", "ration"];
+
+function passAims(aims: readonly Aim[], holding: boolean): Aim[] {
+  const on = aims.filter((aim) => aim.on);
+  if (holding) return on;
+  const lead = LEAD.flatMap((id) => on.filter((aim) => aim.id === id));
+  const rest = on.filter((aim) => !LEAD.includes(aim.id));
+  return [...lead, ...rest];
 }
 
 function floorReady(crust: Crust, stocks: Stocks): boolean {
