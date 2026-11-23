@@ -219,3 +219,14 @@ export function publicFace(table: Table): PublicFace {
     worksThrough: table.works.stocks.stormHeld === 1,
   };
 }
+
+/** After the dust, the only scores are one held, both held, or both dark. */
+export function stormVerdict(table: Table): string | null {
+  const face = publicFace(table);
+  if (face.storming) return null;
+  const seen = table.cradle.stocks.stormSeen === 1 || table.works.stocks.stormSeen === 1;
+  if (!seen) return null;
+  if (face.cradle === "held" && face.works === "held") return "Both yards held.";
+  if (face.cradle === "dark" && face.works === "dark") return "Both yards went dark.";
+  return "One yard held. The other went dark.";
+}

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { bothSealed, closeIfSealed, closeTable, createTable, publicFace, reduceTable, replaySeals, runSeat, sealSeat, seatFromSearch, seatSite, tableHash, tableWanted, WORKS_FINES_KG } from "./table.ts";
+import { bothSealed, closeIfSealed, closeTable, createTable, publicFace, reduceTable, replaySeals, runSeat, sealSeat, seatFromSearch, seatSite, stormVerdict, tableHash, tableWanted, WORKS_FINES_KG } from "./table.ts";
 import { DEFAULT_AIMS } from "./governor.ts";
 import { CUT_KWH, closeSol, createStocks, stocksBytes } from "./power.ts";
 import { createWorld } from "../climate/model.ts";
@@ -216,4 +216,26 @@ test("held through the storm is a public bit, not a stock list", () => {
   assert.equal(face.worksThrough, false);
   assert.equal(JSON.stringify(face).includes("123"), false);
   assert.equal(JSON.stringify(face).includes("fines"), false);
+});
+
+test("after the storm the score is one held, both held, or both dark", () => {
+  const quiet = createTable();
+  assert.equal(stormVerdict(quiet), null);
+  const storm = { startSol: 12, duration: 40, peakTauMilli: 5000 };
+  const during = createTable();
+  during.climate = { ...during.climate, sol: 30, storm };
+  during.cradle.stocks = { ...during.cradle.stocks, stormSeen: 1, stormHeld: 1 };
+  assert.equal(stormVerdict(during), null);
+  const both = createTable();
+  both.cradle.stocks = { ...both.cradle.stocks, stormSeen: 1, stormHeld: 1 };
+  both.works.stocks = { ...both.works.stocks, stormSeen: 1, stormHeld: 1 };
+  assert.equal(stormVerdict(both), "Both yards held.");
+  const one = createTable();
+  one.cradle.stocks = { ...one.cradle.stocks, stormSeen: 1, stormHeld: 1 };
+  one.works.stocks = { ...one.works.stocks, stormSeen: 1, stormBroke: 1 };
+  assert.equal(stormVerdict(one), "One yard held. The other went dark.");
+  const dark = createTable();
+  dark.cradle.stocks = { ...dark.cradle.stocks, stormSeen: 1, stormBroke: 1 };
+  dark.works.stocks = { ...dark.works.stocks, stormSeen: 1, stormBroke: 1 };
+  assert.equal(stormVerdict(dark), "Both yards went dark.");
 });

@@ -48,6 +48,7 @@ import {
   reduceTable,
   replaySeals,
   seatFromSearch,
+  stormVerdict,
   tableWanted,
   type SeatId,
   type SealMsg,
@@ -587,7 +588,8 @@ export function Council() {
                     : "dark"}
                   . {tableState.waiting ? "Waiting for the other yard." : "Both yards have sealed this sol."}
                   {publicFace(tableState.table).cradleThrough ? " The Low Cradle held through the storm." : ""}
-                  {publicFace(tableState.table).worksThrough ? " The Works held through the storm." : ""} Leave the table and this
+                  {publicFace(tableState.table).worksThrough ? " The Works held through the storm." : ""}
+                  {stormVerdict(tableState.table) ? ` ${stormVerdict(tableState.table)}` : ""} Leave the table and this
                   board runs alone.
                 </p>
               ) : null}
