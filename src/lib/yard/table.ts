@@ -174,25 +174,25 @@ export type SealMsg = { type: "seal"; seat: SeatId; aims: Aim[]; sol: number };
 
 export type TableMsg = SealMsg | { type: "table"; table: Table; hash: string };
 
-export type TableState = { table: Table; split: boolean; waiting: boolean };
+export type TableState = { table: Table; split: boolean; waiting: boolean; log: string[] };
 
 /** Record a seal. When both yards have sealed the sol, step the climate once and run each list on its own yard. */
 export function reduceTable(state: TableState, msg: TableMsg): TableState {
   if (msg.type === "table") {
     if (msg.hash !== tableHash(msg.table)) return { ...state, split: true };
-    return { table: msg.table, split: false, waiting: !bothSealed(msg.table) };
+    return { table: msg.table, split: false, waiting: !bothSealed(msg.table), log: state.log };
   }
   if (msg.sol !== state.table.climate.sol) return state;
   const sealed = sealSeat(state.table, msg.seat, msg.aims);
-  if (!bothSealed(sealed)) return { table: sealed, split: false, waiting: true };
+  if (!bothSealed(sealed)) return { table: sealed, split: false, waiting: true, log: state.log };
   const closed = closeTable(sealed);
   const cradle = runSeat(closed, "cradle");
   const works = runSeat(cradle.table, "works");
-  return { table: works.table, split: false, waiting: false };
+  return { table: works.table, split: false, waiting: false, log: [...cradle.landed, ...works.landed] };
 }
 
 export function replaySeals(seals: readonly SealMsg[]): TableState {
-  return seals.reduce<TableState>(reduceTable, { table: createTable(), split: false, waiting: false });
+  return seals.reduce<TableState>(reduceTable, { table: createTable(), split: false, waiting: false, log: [] });
 }
 
 export function splitLine(split: boolean): string | null {

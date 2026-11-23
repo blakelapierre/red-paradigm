@@ -270,7 +270,7 @@ export function Council() {
     const who = seatRef.current;
     const aimsNow = aimsRef.current.map((aim) => ({ ...aim }));
     setTableState((prev) => {
-      const base = prev ?? { table: createTable(), split: false, waiting: false };
+      const base = prev ?? { table: createTable(), split: false, waiting: false, log: [] };
       const withSeat = writeSeat(base.table, who, p);
       const msg: SealMsg = { type: "seal", seat: who, aims: aimsNow, sol: withSeat.climate.sol };
       rememberSeal(msg);
@@ -352,7 +352,10 @@ export function Council() {
 
   useEffect(() => {
     if (!tableOn || !tableState) return;
-    setPair((p) => pairFrom(tableState.table, seat, p));
+    setPair((p) => {
+      const next = pairFrom(tableState.table, seat, p);
+      return tableState.log.length ? { ...next, log: tableState.log.slice(-8) } : next;
+    });
   }, [tableOn, tableState, seat]);
 
   useEffect(() => {

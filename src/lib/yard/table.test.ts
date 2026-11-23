@@ -256,6 +256,20 @@ test("the works list is not the cradle list", () => {
   assert.ok(ran.table.works.stocks.finesKg > 0n);
 });
 
+test("a closed sol says what each yard spent", () => {
+  const cradleAims = DEFAULT_AIMS.map((aim) => ({ ...aim, on: aim.id === "power" }));
+  const worksAims = WORKS_AIMS.map((aim) => ({ ...aim }));
+  const start = { table: createTable(), split: false, waiting: false, log: [] as string[] };
+  const one = reduceTable(start, { type: "seal", seat: "cradle", aims: cradleAims, sol: 0 });
+  assert.equal(one.table.climate.sol, 0);
+  const two = reduceTable(one, { type: "seal", seat: "works", aims: worksAims, sol: 0 });
+  assert.equal(two.table.climate.sol, 1);
+  assert.ok(two.log.some((line) => line.includes("10 kW")));
+  assert.equal(two.table.cradle.stocks.reactor, 1);
+  assert.equal(two.table.works.crust.spoilKg, 0n);
+  assert.equal(two.table.cradle.crust.spoilKg, 0n);
+});
+
 test("a bad table is named, and it is not applied", () => {
   assert.equal(splitLine(false), null);
   assert.equal(splitLine(true), "HASH SPLIT. This window did not take that table.");
