@@ -62,7 +62,7 @@ import { commitMill } from "@/lib/yard/mill";
 import { commitDump } from "@/lib/yard/dump";
 import { LAMP_BED_KWH, LAMP_G, commitLamp } from "@/lib/yard/lamp";
 import { BED_CAP, commitPlant } from "@/lib/yard/bed";
-import { HELD_MARK, holdGapLine, kilometerHolds } from "@/lib/yard/hold";
+import { HELD_MARK, holdGapLine, kilometerHolds, stormLine } from "@/lib/yard/hold";
 import { vesselLines } from "@/lib/yard/status";
 import { roofCount, sharedRoofWarning } from "@/lib/yard/bill";
 import { commitCable } from "@/lib/yard/cable";
@@ -408,6 +408,9 @@ export function Council() {
                   ? `This kilometer has held for ${pair.canonStocks.heldSols} sols. The climate cell did not move.`
                   : `Held ${pair.canonStocks.heldSols} of ${HELD_MARK} sols.`}
               </p>
+            ) : null}
+            {turnA === turnB && stormLine(pair.canonStocks) ? (
+              <p className="mt-1 text-sm text-frost">{stormLine(pair.canonStocks)}</p>
             ) : null}
             {turnA === turnB && holdGapLine(pair.canonCrust, pair.canonStocks) ? (
               <p className="mt-1 text-sm text-muted">{holdGapLine(pair.canonCrust, pair.canonStocks)}</p>

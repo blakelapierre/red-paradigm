@@ -74,3 +74,8 @@ export function markStorm(before: World, after: World, crust: Crust, stocks: Sto
   if (stormBroke === stocks.stormBroke && stormHeld === stocks.stormHeld && stormSeen === stocks.stormSeen) return stocks;
   return { ...stocks, stormBroke, stormHeld, stormSeen };
 }
+
+export function stormLine(stocks: Stocks): string | null {
+  if (stocks.stormHeld !== 1) return null;
+  return "The kilometer held through the storm. The air mass did not change.";
+}

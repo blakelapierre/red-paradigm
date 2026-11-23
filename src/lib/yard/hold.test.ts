@@ -5,7 +5,7 @@ import { STORM_DURATION, STORM_PEAK_TAU_MILLI, STORM_SOL } from "../climate/cons
 import { createCrust, setFlag } from "../crust/crust.ts";
 import { turnHash } from "../turn.ts";
 import { BED_CAP } from "./bed.ts";
-import { HELD_MARK, cradleHolding, holdGap, kilometerHolds, markHold, markStorm } from "./hold.ts";
+import { HELD_MARK, cradleHolding, holdGap, kilometerHolds, markHold, markStorm, stormLine } from "./hold.ts";
 import { CABIN_O2_KG } from "./meter.ts";
 import { closeSol, createStocks, stocksBytes } from "./power.ts";
 import { STALE_CO2_KG, commitVent } from "./vent.ts";
@@ -272,6 +272,15 @@ test("closing into a stripping sol marks that the storm was seen", () => {
   assert.equal(closed.stocks.stormHeld, 0);
   const other = closeSol(filed, createStocks(), createCrust());
   assert.equal(turnHash(closed.world, closed.crust, closed.stocks), turnHash(other.world, other.crust, other.stocks));
+});
+
+test("the storm sentence is said only when the run never zeroed", () => {
+  assert.equal(stormLine(createStocks()), null);
+  assert.equal(stormLine({ ...createStocks(), stormSeen: 1, stormBroke: 1 }), null);
+  assert.equal(
+    stormLine({ ...createStocks(), stormHeld: 1, stormSeen: 1 }),
+    "The kilometer held through the storm. The air mass did not change.",
+  );
 });
 
 
