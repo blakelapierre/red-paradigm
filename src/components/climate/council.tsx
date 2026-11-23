@@ -27,6 +27,7 @@ import {
   floorM,
   overrideAt,
   paintOf,
+  flagOf,
   type Crust,
 } from "@/lib/crust/crust";
 import { turnHash } from "@/lib/turn";
@@ -54,7 +55,6 @@ import { commitMeter } from "@/lib/yard/meter";
 import { commitPaint } from "@/lib/yard/paint";
 import { commitRelease } from "@/lib/yard/release";
 import {
-  CUT_KWH,
   arrayKwh,
   closeSol,
   commitPoweredCut,
@@ -320,7 +320,17 @@ export function Council() {
           </div>
         </section>
 
-        <aside className="flex flex-col gap-3">
+        <aside className="flex flex-col gap-3 lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)] lg:overflow-y-auto">
+          <div className="sticky top-0 z-10 rounded-sm border border-line bg-surface p-3">
+            <p className="text-xs text-muted">Order</p>
+            <p className={`mt-1 text-base font-medium ${canonCut ? (canonCut.accepted ? "text-frost" : "text-oxide") : "text-muted"}`}>
+              {canonCut ? canonCut.reason : "No order yet. A refusal spends nothing, for both clients."}
+            </p>
+            <p className="mt-1 text-xs text-muted">
+              Both clients: {witnessCut ? witnessCut.reason : "no order yet"}
+              {turnA === turnB ? " · AGREE" : " · HASH SPLIT"}
+            </p>
+          </div>
           <div className="flex flex-col gap-2 rounded-sm border border-line bg-surface p-3">
             <button
               type="button"
@@ -679,6 +689,44 @@ function HashRow({ label, a, b }: { label: string; a: string; b: string }) {
   );
 }
 
+function OrderButton({
+  id,
+  which,
+  note,
+  onClick,
+  children,
+  primary,
+}: {
+  id: string;
+  which: string | null;
+  note: CutNote | null;
+  onClick: () => void;
+  children: string;
+  primary?: boolean;
+}) {
+  const hot = which === id && note !== null;
+  const accepted = hot && note.accepted;
+  const refused = hot && !note.accepted;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`min-h-11 rounded-sm px-3 py-2 text-left text-sm ${
+        accepted
+          ? "border border-frost bg-surface text-frost"
+          : refused
+            ? "border border-oxide bg-surface text-oxide"
+            : primary
+              ? "bg-oxide font-medium text-bg"
+              : "border border-line text-fg"
+      }`}
+    >
+      <span className="block">{children}</span>
+      {hot ? <span className="mt-1 block text-xs leading-snug">{note.reason}</span> : null}
+    </button>
+  );
+}
+
 function Former({
   seedZm,
   lat,
@@ -748,6 +796,11 @@ function Former({
   onRadiator: () => void;
   climateAlbedoMilli: number;
 }) {
+  const [which, setWhich] = useState<string | null>(null);
+  const act = (id: string, fn: () => void) => () => {
+    setWhich(id);
+    fn();
+  };
   const at = cellOf(lat, lon);
   const dz = overrideAt(canon, at.ix, at.iy);
   const floor = floorM(seedZm, dz);
@@ -783,92 +836,144 @@ function Former({
           <dt className="text-xs text-muted">Fines</dt>
           <dd className="font-mono text-xs">{formatKg(stocks.finesKg)}</dd>
         </div>
+        <div>
+          <dt className="text-xs text-muted">Ice</dt>
+          <dd className="font-mono text-xs">{formatKg(stocks.iceKg)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted">Water</dt>
+          <dd className="font-mono text-xs">{formatKg(stocks.waterKg)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted">Brine</dt>
+          <dd className="font-mono text-xs">{formatKg(stocks.brineKg)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted">Oxygen</dt>
+          <dd className="font-mono text-xs">{formatKg(stocks.o2Kg)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted">Hydrogen</dt>
+          <dd className="font-mono text-xs">{formatKg(stocks.h2Kg)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted">CO2 bottle</dt>
+          <dd className="font-mono text-xs">{formatKg(stocks.co2Kg)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted">Cabin CO2</dt>
+          <dd className="font-mono text-xs">{formatKg(stocks.cabinCo2Kg)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted">Cabin O2</dt>
+          <dd className="font-mono text-xs">{formatKg(stocks.cabinO2Kg)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted">Methane</dt>
+          <dd className="font-mono text-xs">{formatKg(stocks.ch4Kg)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted">Toxin</dt>
+          <dd className="font-mono text-xs">{stocks.toxinMilli}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted">Crew / food</dt>
+          <dd className="font-mono text-xs">{stocks.debt ? "owed" : "clear"} · {stocks.foodDebt ? "short" : "fed"}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted">Biomass</dt>
+          <dd className="font-mono text-xs">{stocks.biomassG} g · lamp {stocks.lamp ? "on" : "off"}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted">Line</dt>
+          <dd className="font-mono text-xs">{stocks.cableOn ? `${stocks.cableIx}, ${stocks.cableIy}` : "cradle only"}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted">Array</dt>
+          <dd className="font-mono text-xs">{stocks.healthMilli}/1000 · {stocks.reactor ? "reactor on" : "reactor off"}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted">Cabin</dt>
+          <dd className="font-mono text-xs">+{stocks.cabinRiseK} K · {stocks.heatKwh} kWh · {stocks.drawnKg} kg</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted">Collector / radiator</dt>
+          <dd className="font-mono text-xs">{stocks.collector ? "on" : "off"} · {stocks.radiator ? "on" : "off"}</dd>
+        </div>
       </dl>
       <div className="mt-3 grid grid-cols-2 gap-2">
-        <button type="button" className="min-h-11 rounded-sm bg-oxide px-3 text-sm font-medium text-bg" onClick={onDig}>
+        <OrderButton id="dig" which={which} note={canonCut} primary onClick={act("dig", onDig)}>
           Dig 2 m
-        </button>
-        <button type="button" className="min-h-11 rounded-sm border border-line px-3 text-sm text-fg" onClick={onMill}>
+        </OrderButton>
+        <OrderButton id="mill" which={which} note={canonCut} onClick={act("mill", onMill)}>
           Mill a batch
-        </button>
+        </OrderButton>
+        <OrderButton id="dump" which={which} note={canonCut} onClick={act("dump", onDump)}>
+          Return 1 cm of tailings
+        </OrderButton>
+        <OrderButton id="lamp" which={which} note={canonCut} onClick={act("lamp", onLamp)}>
+          Raise a lamp
+        </OrderButton>
+        <OrderButton id="cable" which={which} note={canonCut} onClick={act("cable", onCable)}>
+          Wire this kilometer
+        </OrderButton>
+        <OrderButton id="meter" which={which} note={canonCut} onClick={act("meter", onMeter)}>
+          Meter 28 kg into the cabin
+        </OrderButton>
+        <OrderButton id="paint" which={which} note={canonCut} onClick={act("paint", onPaint)}>
+          Paint this kilometer
+        </OrderButton>
+        <OrderButton id="mine" which={which} note={canonCut} onClick={act("mine", onMine)}>
+          Mine 1 t ice
+        </OrderButton>
+        <OrderButton id="compress" which={which} note={canonCut} onClick={act("compress", onCompress)}>
+          Bottle 44 kg CO2
+        </OrderButton>
+        <OrderButton id="vent" which={which} note={canonCut} onClick={act("vent", onVent)}>
+          Vent 1 kg cabin CO2
+        </OrderButton>
+        <OrderButton id="split" which={which} note={canonCut} onClick={act("split", onSplit)}>
+          Electrolyze 36 kg
+        </OrderButton>
+        <OrderButton id="sabatier" which={which} note={canonCut} onClick={act("sabatier", onSabatier)}>
+          Sabatier batch
+        </OrderButton>
+        <OrderButton id="burn" which={which} note={canonCut} onClick={act("burn", onBurn)}>
+          Burn 16 kg methane
+        </OrderButton>
+        <OrderButton id="wash" which={which} note={canonCut} onClick={act("wash", onWash)}>
+          Wash tanks
+        </OrderButton>
+        <OrderButton id="roof" which={which} note={canonCut} onClick={act("roof", onRoof)}>
+          Roof this kilometer
+        </OrderButton>
+        <OrderButton id="road" which={which} note={canonCut} onClick={act("road", onRoad)}>
+          Lay a road
+        </OrderButton>
+        <OrderButton id="berm" which={which} note={canonCut} onClick={act("berm", onBerm)}>
+          Raise a berm
+        </OrderButton>
+        <OrderButton id="collector" which={which} note={canonCut} onClick={act("collector", onCollector)}>
+          Raise a collector
+        </OrderButton>
+        <OrderButton id="repair" which={which} note={canonCut} onClick={act("repair", onRepair)}>
+          Repair the array
+        </OrderButton>
+        <OrderButton id="reactor" which={which} note={canonCut} onClick={act("reactor", onReactor)}>
+          Start the kilopower
+        </OrderButton>
+        <OrderButton id="heat" which={which} note={canonCut} onClick={act("heat", onHeat)}>
+          Heat the vessel
+        </OrderButton>
+        <OrderButton id="draw" which={which} note={canonCut} onClick={act("draw", onDraw)}>
+          Draw 1 kg from the column
+        </OrderButton>
+        <OrderButton id="radiator" which={which} note={canonCut} onClick={act("radiator", onRadiator)}>
+          Raise a radiator
+        </OrderButton>
       </div>
-      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onDump}>
-        Return 1 cm of tailings
-      </button>
-      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onLamp}>
-        Raise a lamp
-      </button>
-      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onCable}>
-        Wire this kilometer
-      </button>
-      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onMeter}>
-        Meter 28 kg into the cabin
-      </button>
-      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onPaint}>
-        Paint this kilometer
-      </button>
-      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onMine}>
-        Mine 1 t ice
-      </button>
-      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onCompress}>
-        Bottle 44 kg CO2
-      </button>
-      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onVent}>
-        Vent 1 kg cabin CO2
-      </button>
-      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onSplit}>
-        Electrolyze 36 kg
-      </button>
-      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onSabatier}>
-        Sabatier batch
-      </button>
-      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onBurn}>
-        Burn 16 kg methane
-      </button>
-      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onWash}>
-        Wash tanks
-      </button>
-      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onRoof}>
-        Roof this kilometer
-      </button>
-      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onRoad}>
-        Lay a road
-      </button>
-      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onBerm}>
-        Raise a berm
-      </button>
-      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onCollector}>
-        Raise a collector
-      </button>
-      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onRepair}>
-        Repair the array
-      </button>
-      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onReactor}>
-        Start the kilopower
-      </button>
-      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onHeat}>
-        Heat the vessel
-      </button>
-      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onDraw}>
-        Draw 1 kg from the column
-      </button>
-      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onRadiator}>
-        Raise a radiator
-      </button>
-      <p className="mt-2 font-mono text-xs text-muted">
-        ice {formatKg(stocks.iceKg)} · water {formatKg(stocks.waterKg)} · brine {formatKg(stocks.brineKg)} · O2 {formatKg(stocks.o2Kg)} · H2 {formatKg(stocks.h2Kg)} · CO2 {formatKg(stocks.co2Kg)} · cabin CO2 {formatKg(stocks.cabinCo2Kg)} · CH4 {formatKg(stocks.ch4Kg)} · toxin {stocks.toxinMilli} · debt {stocks.debt ? "owed" : "clear"} · biomass {stocks.biomassG} g · food {stocks.foodDebt ? "short" : "fed"} · lamp {stocks.lamp ? "on" : "off"} · line {stocks.cableOn ? `${stocks.cableIx},${stocks.cableIy}` : "cradle only"} · cabin O2 {formatKg(stocks.cabinO2Kg)} · collector {stocks.collector ? "up" : "down"} · health {stocks.healthMilli}/1000 · reactor {stocks.reactor ? "on" : "off"} · cabin +{stocks.cabinRiseK} K · column {stocks.drawnKg}/10000 kg · heat {stocks.heatKwh} kWh · radiator {stocks.radiator ? "up" : "down"}
-      </p>
       <p className="mt-2 text-xs text-muted">
-        Each sol takes 1 kg of oxygen and 3 kg of water. If either is short, the sol is owed and neither is spent. A breathed sol leaves 1 kg of CO2 in the cabin. At 5 kg the gram does not grow. Venting 1 kg costs 5 kWh and does not move the air mass. Dirty water is not split. Wash the tanks first. A roof costs 10,000 kWh that same sol. If the battery cannot pay, every roof comes down. Under a standing roof, with clean water and no debt, one gram of biomass grows and one kilogram of water is spent. The crew eats 500 g or the sol is short of food. A lamp under the roof grows 20 g, not 500. Metering 28 kg of oxygen into the 100 m³ cabin is about 21 kPa, and there is no nitrogen. That is not breathable air. The air mass does not move. A collector costs 30,000 kg of fines. On a stripping sol it returns a tenth of the particle mass that left this array's climate cell. Five grams per square meter per optical depth is an order of magnitude. A clear sol returns nothing. A stripping sol also takes 10/1000 off the array after that sol's power is banked. Repair spends 10,000 kg of fines to put 100/1000 back. Methane in the open loses 1 percent a sol, and at least 1 kg when the tank is smaller than 100 kg. Open water does the same. Open hydrogen loses 10 percent. Open oxygen loses 1 percent. A standing roof holds them. Heating that vessel costs 10,000 kWh per kelvin, up to 40 K above the yard. The climate cell does not move. Drawing water takes 1 kg and 50 kWh from a column of about 10,000 kg over this kilometer. At 10,000 kg the order refuses. The air mass does not move. About 40 kWh of each 200 kWh split does not stay in the hydrogen. Past 80 kWh the cell waits. The open yard sheds 40 kWh a sol. A radiator costs 20,000 kg of fines and sheds 200.
-      </p>
-      <p className="mt-2 text-xs text-muted">
-        One kilometer, two meters down, 3,000,000,000 kg at 1,500 kg/m³. The cut costs {formatKwh(CUT_KWH)}. It will not cut a kilometer that has a roof. Off the cradle, it will not cut a kilometer with no line. Below 612 Pa the ice order is vapor and is not bottled. Bottled CO2 is a local 44 kg, and Sabatier spends it. A mill batch is 100,000,000 kg of spoil and 1,000,000 kWh. Five percent is fines. The other ninety-five percent stays as tailings. One centimeter of that fill is 15,000,000 kg back in the hole, and it does not free a second cut. Paint is 50,000 kg of fines on this kilometer, albedo 0.10. This cell's albedo stays {(climateAlbedoMilli / 1000).toFixed(3)}. The coat is {paintOf(canon, at.ix, at.iy) > 0 ? "on" : "not on"} this kilometer. Floor pressure moves by {delta.toFixed(2)} Pa.
-      </p>
-      <p className={`mt-2 text-xs ${canonCut?.accepted ? "text-frost" : "text-muted"}`}>
-        Order: {canonCut ? canonCut.reason : "no cut yet"}
-      </p>
-      <p className="mt-1 text-xs text-muted">
-        Both clients: {witnessCut ? witnessCut.reason : "no cut yet"} · spoil {formatKg(witness.spoilKg)}
+        This kilometer: coat {paintOf(canon, at.ix, at.iy) > 0 ? "on" : "off"}, roof {flagOf(canon, at.ix, at.iy, "roof") ? "up" : "down"}, road {flagOf(canon, at.ix, at.iy, "road") ? "laid" : "none"}, berm {flagOf(canon, at.ix, at.iy, "berm") ? "up" : "none"}. Floor pressure moves by {delta.toFixed(2)} Pa. The climate cell stays at albedo {(climateAlbedoMilli / 1000).toFixed(3)}.
       </p>
     </section>
   );

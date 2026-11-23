@@ -1,10 +1,11 @@
-import { SITES } from "../climate/model.ts";
+import { cellLat, cellLon, latIndexOf, lonIndexOf } from "../climate/constants.ts";
+import { siteIndex } from "../climate/model.ts";
 import { cellOf } from "../crust/crust.ts";
 import { type Stocks } from "./power.ts";
 
-const cradle = SITES.find((site) => site.id === "cradle");
-if (!cradle) throw new Error("cradle");
-export const CRADLE_CELL = cellOf(cradle.lat, cradle.lon);
+/** The kilometer the board digs when the Low Cradle climate cell is selected. Not the site pin, which sits off that cell's center. */
+const cradleIndex = siteIndex("cradle");
+export const CRADLE_CELL = cellOf(cellLat(latIndexOf(cradleIndex)), cellLon(lonIndexOf(cradleIndex)));
 
 /** One tonne of fines per kilometer of line. An order of magnitude for a conductor, not a catalog. */
 export const KG_PER_KM = 1000n;
