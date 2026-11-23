@@ -20,3 +20,13 @@ test("electrolysis does not run without water", () => {
   assert.equal(missed.accepted, false);
   assert.equal(missed.a.h2Kg, 0n);
 });
+
+test("dirty water is not split", () => {
+  const stocks = { ...createStocks(), batteryKwh: 200, waterKg: ELECTROLYSIS_WATER_KG, toxinMilli: 1000 };
+  const dirty = commitElectrolysis(stocks, stocks);
+  assert.equal(dirty.accepted, false);
+  assert.match(dirty.reason, /wash/);
+  assert.equal(dirty.a.waterKg, ELECTROLYSIS_WATER_KG);
+  assert.equal(dirty.a.h2Kg, 0n);
+  assert.equal(dirty.a.batteryKwh, 200);
+});

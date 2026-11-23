@@ -15,6 +15,9 @@ export function commitElectrolysis(a: Stocks, b: Stocks): { a: Stocks; b: Stocks
   if (a.waterKg < ELECTROLYSIS_WATER_KG || b.waterKg < ELECTROLYSIS_WATER_KG) {
     return { ...same, reason: `need ${ELECTROLYSIS_WATER_KG} kg of water` };
   }
+  if (a.toxinMilli !== 0 || b.toxinMilli !== 0) {
+    return { ...same, reason: "wash the tanks first. perchlorate is not an electrolyte" };
+  }
   if (a.heatKwh + SPLIT_HEAT_KWH > HEAT_LIMIT_KWH || b.heatKwh + SPLIT_HEAT_KWH > HEAT_LIMIT_KWH) {
     return { ...same, reason: "the yard cannot reject the heat" };
   }
