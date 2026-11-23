@@ -16,7 +16,7 @@ The council map is a climate tick and one former, not the whole game.
 - One mill batch. 100,000,000 kg of spoil and 1,000,000 kWh become 5,000,000 kg of fines. The other 95,000,000 kg stays as tailings. It is not deleted. The warehouse holds 50,000,000 kg. No spoil, no power, or a full warehouse, and neither client mills.
 - Return one centimeter of tailings to the hole. That is 15,000,000 kg at 1,500 kg/m³. The yard can hold that much again. It is not a second cut. The climate cell does not move.
 - One painted kilometer. 50,000 kg of fines, albedo 0.10 on that cell only. A 5° climate cell does not move. Both clients paint, or neither does.
-- One tonne of ice. 50 kWh from a 1,000,000,000 kg lens at the cradle. The water is dirty: toxin 1000. An empty lens or an empty battery mines for neither client.
+- One tonne of ice. 50 kWh from a 1,000,000,000 kg lens at the cradle. The water is dirty: toxin 1000. Below 612 Pa the order refuses. That site is vapor, and this board will not bottle it. An empty lens or an empty battery mines for neither client.
 - Electrolysis of 36 kg of water for 200 kWh. It yields 4 kg of hydrogen and 32 kg of oxygen. The masses close. Toxin 1000 refuses the split. Wash the tanks first.
 - One Sabatier batch. 8 kg of hydrogen and 50 kWh become 16 kg of methane and 36 kg of water. The planetary CO₂ bar does not move.
 - Burn 16 kg of methane with 64 kg of oxygen. Electricity is 8 kWh per kilogram of methane, 128 kWh, plus 36 kg of water back.
