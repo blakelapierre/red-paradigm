@@ -31,6 +31,7 @@ The council map is a climate tick and one former, not the whole game.
 - Array health. It starts at 1000/1000 and scales the array the board shows. A stripping sol takes 10 off after that sol is banked. Repair spends 10,000 kg of fines and puts 100 back.
 - One kilopower. 10 kW for 24 hours is 240 kWh a sol, added after the array and not scaled by dust or panel health. It starts once, for both clients.
 - Open methane. One percent leaves each sol, and at least one kilogram when the tank is under 100 kg. A standing roof holds the tank. The air mass does not move.
+- Open water. The same one percent, and at least one kilogram. A standing roof holds it. It does not become weather.
 - Vessel heat. 10,000 kWh raises the inside by 1 K, up to 40 K above the yard. There is no heat without a roof. The climate cell does not move.
 - A condenser. 50 kWh takes 1 kg of water from the column over one kilometer, about 10,000 kg at 10 grams per square meter. That figure is an order of magnitude. At 10,000 kg the order refuses. The air mass does not move, and this board does not invent a wind to refill the column.
 - Electrolysis heat. About 40 kWh of the 200 does not stay in the hydrogen. Past 80 kWh the cell refuses. The open yard sheds 40 kWh a sol. A radiator costs 20,000 kg of fines and sheds 200.
