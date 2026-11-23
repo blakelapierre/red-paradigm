@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createWorld } from "../climate/model.ts";
+import { airKg, createWorld, step } from "../climate/model.ts";
 import { createCrust, setFlag } from "../crust/crust.ts";
 import { BED_CAP } from "./bed.ts";
 import { cradleHolding, markHold } from "./hold.ts";
 import { CABIN_O2_KG } from "./meter.ts";
 import { closeSol, createStocks, stocksBytes } from "./power.ts";
-import { STALE_CO2_KG } from "./vent.ts";
+import { STALE_CO2_KG, commitVent } from "./vent.ts";
 
 function ready() {
   return {
@@ -94,4 +94,38 @@ test("five breaths without a vent zero the run", () => {
   assert.equal(stale.stocks.biomassG, 0);
   assert.equal(stale.stocks.heldSols, 0);
 });
+
+test("a vent between sols lets the run pass five breaths", () => {
+  const roof = setFlag(createCrust(), 1, 2, "roof", 1);
+  const origin = createWorld();
+  let world = origin;
+  let stocks = {
+    ...createStocks(),
+    lamp: 1,
+    beds: BED_CAP,
+    cabinO2Kg: CABIN_O2_KG + STALE_CO2_KG + 1n,
+    biomassG: 500,
+    o2Kg: STALE_CO2_KG + 1n,
+    waterKg: 28n * (STALE_CO2_KG + 1n),
+  };
+  let crust = roof;
+  const sols = Number(STALE_CO2_KG) + 1;
+  for (let sol = 0; sol < sols; sol++) {
+    const closed = closeSol(world, stocks, crust);
+    world = closed.world;
+    stocks = closed.stocks;
+    crust = closed.crust;
+    if (sol + 1 < sols) {
+      const vented = commitVent(stocks, stocks, world);
+      assert.equal(vented.accepted, true);
+      stocks = vented.a;
+    }
+  }
+  assert.equal(stocks.heldSols, sols);
+  assert.equal(stocks.cabinCo2Kg, 1n);
+  let stepped = origin;
+  for (let sol = 0; sol < sols; sol++) stepped = step(stepped, { fileStorm: true });
+  assert.equal(airKg(world.ls), airKg(stepped.ls));
+});
+
 
