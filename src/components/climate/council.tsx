@@ -978,7 +978,9 @@ function Former({
           </li>
         ))}
       </ul>
-      <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+      <details className="mt-2">
+        <summary className="min-h-11 cursor-pointer text-xs text-muted">Stocks</summary>
+        <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
         <div>
           <dt className="text-xs text-muted">Spoil in the yard</dt>
           <dd className="font-mono text-xs">{formatKg(canon.spoilKg)}</dd>
@@ -1080,6 +1082,7 @@ function Former({
           <dd className="font-mono text-xs">{stocks.collector ? "on" : "off"} · {stocks.radiator ? "on" : "off"}</dd>
         </div>
       </dl>
+      </details>
       <div className="mt-3 grid grid-cols-2 gap-2">
         <OrderButton id="dig" which={which} note={canonCut} onManual={onManual} primary onClick={act("dig", onDig)}>
           Dig 2 m
