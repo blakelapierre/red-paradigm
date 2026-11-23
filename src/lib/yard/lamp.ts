@@ -1,9 +1,18 @@
 import { type Crust } from "../crust/crust.ts";
 import { type Stocks } from "./power.ts";
 
-/** A lamp under the roof. Twenty grams, not a ration. */
+/** A lamp under the roof. Twenty grams a bed, not a ration by itself. */
 export const LAMP_FINES_KG = 20_000n;
 export const LAMP_G = 20;
+/** About 10 kWh a bed a sol. Twenty-five beds are 250 kWh, the order of one reactor, not the array. */
+export const LAMP_BED_KWH = 10;
+
+export function payLamp(stocks: Stocks): { stocks: Stocks; lit: boolean } {
+  if (!stocks.lamp || stocks.beds < 1) return { stocks, lit: false };
+  const cost = stocks.beds * LAMP_BED_KWH;
+  if (stocks.batteryKwh < cost) return { stocks, lit: false };
+  return { stocks: { ...stocks, batteryKwh: stocks.batteryKwh - cost }, lit: true };
+}
 
 export function commitLamp(
   a: Crust,
