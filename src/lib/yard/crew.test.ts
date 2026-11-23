@@ -11,10 +11,12 @@ test("the crew drinks and breathes, or the sol is owed", () => {
   assert.equal(fed.debt, 0);
   assert.equal(fed.o2Kg, 0n);
   assert.equal(fed.waterKg, 0n);
+  assert.equal(fed.cabinCo2Kg, 1n);
   const hungry = drawCrew(fed);
   assert.equal(hungry.debt, 1);
   assert.equal(hungry.o2Kg, 0n);
   assert.equal(hungry.waterKg, 0n);
+  assert.equal(hungry.cabinCo2Kg, 1n);
 });
 
 test("closing a sol draws the crew after the array is banked", () => {
@@ -23,9 +25,11 @@ test("closing a sol draws the crew after the array is banked", () => {
   const hungry = closeSol(world, createStocks(), createCrust());
   assert.equal(hungry.stocks.batteryKwh, shown);
   assert.equal(hungry.stocks.debt, 1);
+  assert.equal(hungry.stocks.cabinCo2Kg, 0n);
   const fed = closeSol(world, { ...createStocks(), o2Kg: 1n, waterKg: 3n }, createCrust());
   assert.equal(fed.stocks.debt, 0);
   assert.equal(fed.stocks.o2Kg, 0n);
   assert.equal(fed.stocks.waterKg, 0n);
+  assert.equal(fed.stocks.cabinCo2Kg, 1n);
   assert.equal(fed.stocks.batteryKwh, shown);
 });

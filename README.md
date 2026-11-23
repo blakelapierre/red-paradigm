@@ -25,7 +25,7 @@ The council map is a climate tick and one former, not the whole game.
 - Roof one kilometer. 50,000 kg of fines and 100,000 kWh. Inside the vessel is 101,325 Pa. The climate cell's pressure does not move.
 - One road. 20,000 kg of fines on one kilometer. The climate cell does not move.
 - One berm. 20,000 kg of fines. The climate cell's temperature amplitude does not move.
-- The crew. One kilogram of oxygen and three kilograms of water each sol. Short either one and the sol is owed. Nothing is spent on a debt.
+- The crew. One kilogram of oxygen and three kilograms of water each sol. Short either one and the sol is owed. Nothing is spent on a debt. A breathed sol puts one kilogram of CO2 in the cabin. That is the order of the oxygen they took, not a new atmosphere.
 - Roof upkeep. 10,000 kWh a sol, taken after the array is banked. If the battery cannot pay, the roof flags come down. The climate cell does not move.
 - One gram of biomass a sol, under a roof, with clean water and no debt. It spends one kilogram of water. It does not touch the air.
 - A collector. 30,000 kg of fines. On a stripping sol it returns a tenth of the particle mass that left the array's climate cell, up to the warehouse cap. A clear sol returns nothing. Five grams per square meter per optical depth is an order of magnitude.
