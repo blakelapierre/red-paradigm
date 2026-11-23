@@ -60,10 +60,11 @@ import { commitCompress } from "@/lib/yard/compress";
 import { commitVent } from "@/lib/yard/vent";
 import { commitMill } from "@/lib/yard/mill";
 import { commitDump } from "@/lib/yard/dump";
-import { LAMP_G, commitLamp } from "@/lib/yard/lamp";
+import { LAMP_BED_KWH, LAMP_G, commitLamp } from "@/lib/yard/lamp";
 import { BED_CAP, commitPlant } from "@/lib/yard/bed";
 import { HELD_MARK, holdGapLine, kilometerHolds } from "@/lib/yard/hold";
 import { vesselLines } from "@/lib/yard/status";
+import { roofCount, roofWarning } from "@/lib/yard/bill";
 import { commitCable } from "@/lib/yard/cable";
 import { commitMeter } from "@/lib/yard/meter";
 import { commitPaint } from "@/lib/yard/paint";
@@ -410,6 +411,20 @@ export function Council() {
             ) : null}
             {turnA === turnB && holdGapLine(pair.canonCrust, pair.canonStocks) ? (
               <p className="mt-1 text-sm text-muted">{holdGapLine(pair.canonCrust, pair.canonStocks)}</p>
+            ) : null}
+            {turnA === turnB &&
+            roofWarning(
+              scaleArray(arrayKwh(world), pair.canonStocks.healthMilli),
+              roofCount(pair.canonCrust),
+              pair.canonStocks.lamp ? pair.canonStocks.beds * LAMP_BED_KWH : 0,
+            ) ? (
+              <p className="mt-1 text-sm text-oxide">
+                {roofWarning(
+                  scaleArray(arrayKwh(world), pair.canonStocks.healthMilli),
+                  roofCount(pair.canonCrust),
+                  pair.canonStocks.lamp ? pair.canonStocks.beds * LAMP_BED_KWH : 0,
+                )}
+              </p>
             ) : null}
             <button type="button" className="mt-2 min-h-11 text-left text-xs text-frost" onClick={() => setManual("What the list is doing")}>
               Open the field manual
