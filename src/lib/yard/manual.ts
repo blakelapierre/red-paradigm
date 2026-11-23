@@ -106,7 +106,20 @@ Both clients take an order, or neither does.`,
     "Closes one sol on both clients, in this order: bank the array, add the reactor if it is on, abrade the panels if a storm is stripping, salvage fines if a collector is up, draw the crew, bill the roof, boil open methane, boil open water, vent open hydrogen, vent open oxygen, eat, grow, shed heat.",
     `A clear cradle sol at the start banks ${commas(CLEAR_SOL_KWH)} kWh from the ${commas(ARRAY_M2)} m² array, scaled by panel health. The reactor, if it is on, adds ${commas(KILOPOWER_KWH)} kWh after that. Ten sols is the same close, ten times.`,
     "A sol always closes. It does not refuse.",
-    "The air mass is a function of solar longitude only. A sol does not spend it.",
+    "The air mass is a function of solar longitude only. A sol does not spend it. If standing orders are on, the list runs after the close.",
+  ),
+  note(
+    "standing",
+    "Start",
+    "Standing orders",
+    `The player ranks general aims. Power, Cut, Mill, Shelter, Water, and Fuel start on. Column, Veil, Ground, and Array start off. If the yard is set to follow, each sol tries the list once, top to bottom, after the array is banked. Work the list now does one pass without closing a sol.
+
+Power starts the kilopower. Cut digs 2 m on the kilometer the map has selected. Mill runs one batch. Shelter roofs that kilometer, then meters the cabin, vents stale CO2, and raises a lamp and a radiator. Water mines one tonne if the column is at least ${TRIPLE_P_PA} Pa, then washes dirty tanks. Fuel bottles 44 kg, electrolyzes one batch, then runs one Sabatier batch. Column draws 1 kg. Veil lofts one batch on the selected climate cell. Ground paints, then lays a road, then raises a berm. Array raises a collector, then repairs if health is short.
+
+One try each. A refusal spends nothing and does not stop the next aim.`,
+    "Whatever those orders already cost. The list is not a discount.",
+    "An aim that is off is skipped. An aim that cannot pay is refused for both clients.",
+    "Heat, burn, the cable, and the dump stay on the buttons. The list does not move a climate cell except the veil, and only when that aim is on. The priorities themselves are not in the turn hash. The stocks they change are.",
   ),
   note(
     "cell",

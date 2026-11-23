@@ -44,6 +44,7 @@ The council map is a climate tick and one former, not the whole game.
 - Electrolysis heat. About 40 kWh of the 200 does not stay in the hydrogen. Past 80 kWh the cell refuses. The open yard sheds 40 kWh a sol. A radiator costs 20,000 kg of fines and sheds 200.
 - Cabin oxygen. 10 kWh meters 28 kg into a 100 m³ cabin. That is about 21 kPa. There is no nitrogen buffer. This is not breathable air, and it does not move the climate cell.
 - A field manual. Each order says what it does, what it costs, what it refuses, and what it does not move. The figures are the constants the board spends.
+- Standing orders. The player ranks Power, Cut, Mill, Shelter, Water, and Fuel. Those start on. Each sol the yard tries the list once, if the player leaves it on. A refusal spends nothing and does not stop the next aim. Column, veil, ground, and the array start off. Heat, burn, the cable, and the dump stay on the buttons.
 - One turn hash over the climate record, the crust record, and the stocks. They stay together. The hash does not split.
 
 `node_modules` is not in the repo. Install, then:

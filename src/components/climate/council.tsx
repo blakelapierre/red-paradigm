@@ -32,6 +32,16 @@ import {
 } from "@/lib/crust/crust";
 import { turnHash } from "@/lib/turn";
 import { FieldManual } from "@/components/climate/manual";
+import {
+  AIM_NAME,
+  DEFAULT_AIMS,
+  bankSols,
+  moveAim,
+  toggleAim,
+  workList,
+  type Aim,
+  type Yard,
+} from "@/lib/yard/governor";
 import { commitRoof } from "@/lib/yard/roof";
 import { commitRoad } from "@/lib/yard/road";
 import { commitBerm } from "@/lib/yard/berm";
@@ -57,7 +67,6 @@ import { commitPaint } from "@/lib/yard/paint";
 import { commitRelease } from "@/lib/yard/release";
 import {
   arrayKwh,
-  closeSol,
   commitPoweredCut,
   createStocks,
   type Stocks,
@@ -70,6 +79,7 @@ type Pair = {
   witnessCrust: Crust;
   canonStocks: Stocks;
   witnessStocks: Stocks;
+  log: string[];
 };
 
 function fresh(): Pair {
@@ -80,21 +90,42 @@ function fresh(): Pair {
     witnessCrust: createCrust(),
     canonStocks: createStocks(),
     witnessStocks: createStocks(),
+    log: [],
   };
 }
 
-function closeBoth(p: Pair): Pair {
-  const canon = closeSol(p.canon, p.canonStocks, p.canonCrust);
-  const witness = closeSol(p.witness, p.witnessStocks, p.witnessCrust);
+function toYard(p: Pair): Yard {
   return {
-    ...p,
-    canon: canon.world,
-    witness: witness.world,
-    canonStocks: canon.stocks,
-    witnessStocks: witness.stocks,
-    canonCrust: canon.crust,
-    witnessCrust: witness.crust,
+    canon: p.canon,
+    witness: p.witness,
+    canonCrust: p.canonCrust,
+    witnessCrust: p.witnessCrust,
+    canonStocks: p.canonStocks,
+    witnessStocks: p.witnessStocks,
   };
+}
+
+function siteFrom(p: Pair, selected: number) {
+  const view = inspect(p.canon, selected);
+  const at = cellOf(view.lat, view.lon);
+  return {
+    ix: at.ix,
+    iy: at.iy,
+    pressurePa: Math.round(surveyPressure(view.z)),
+    climateIndex: selected,
+    latDeg: view.lat,
+  };
+}
+
+function applySols(p: Pair, sols: number, aims: readonly Aim[], selected: number, follow: boolean): Pair {
+  const result = bankSols(toYard(p), sols, aims, siteFrom(p, selected), follow);
+  const log = !follow ? p.log : result.landed.length ? result.landed.slice(-8) : ["The list spent nothing."];
+  return { ...result.yard, log };
+}
+
+function applyList(p: Pair, aims: readonly Aim[], selected: number): Pair {
+  const worked = workList(toYard(p), aims, siteFrom(p, selected));
+  return { ...worked.yard, log: worked.landed.length ? worked.landed : ["The list spent nothing."] };
 }
 
 function formatKg(kg: bigint): string {
@@ -140,8 +171,16 @@ export function Council() {
   const [canonCut, setCanonCut] = useState<CutNote | null>(null);
   const [witnessCut, setWitnessCut] = useState<CutNote | null>(null);
   const [manual, setManual] = useState<string | null>(null);
+  const [aims, setAims] = useState<Aim[]>(() => DEFAULT_AIMS.map((aim) => ({ ...aim })));
+  const [follow, setFollow] = useState(true);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const aimsRef = useRef(aims);
+  const followRef = useRef(follow);
+  const selectedRef = useRef(selected);
+  aimsRef.current = aims;
+  followRef.current = follow;
+  selectedRef.current = selected;
 
   useEffect(() => {
     if (!playing) return;
@@ -154,7 +193,7 @@ export function Council() {
       acc += dt;
       if (acc >= 0.4) {
         acc = 0;
-        setPair(closeBoth);
+        setPair((p) => applySols(p, 1, aimsRef.current, selectedRef.current, followRef.current));
       }
       raf = requestAnimationFrame(loop);
     };
@@ -168,7 +207,7 @@ export function Council() {
       const tag = (event.target as HTMLElement | null)?.tagName;
       if (tag === "BUTTON" || tag === "INPUT") return;
       event.preventDefault();
-      setPair(closeBoth);
+      setPair((p) => applySols(p, 1, aimsRef.current, selectedRef.current, followRef.current));
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -256,11 +295,11 @@ export function Council() {
   const witnessView = inspect(pair.witness, selected);
 
   const advance = (sols: number) => {
-    setPair((p) => {
-      let next = p;
-      for (let i = 0; i < sols; i++) next = closeBoth(next);
-      return next;
-    });
+    setPair((p) => applySols(p, sols, aims, selected, follow));
+  };
+
+  const workNow = () => {
+    setPair((p) => applyList(p, aims, selected));
   };
 
   const onCanvasClick = (event: MouseEvent<HTMLCanvasElement>) => {
@@ -348,10 +387,76 @@ export function Council() {
               Both clients: {witnessCut ? witnessCut.reason : "no order yet"}
               {turnA === turnB ? " · AGREE" : " · HASH SPLIT"}
             </p>
+            {pair.log.length > 0 ? (
+              <p className={`mt-1 text-sm ${pair.log[pair.log.length - 1] === "The list spent nothing." ? "text-oxide" : "text-frost"}`}>
+                Yard: {pair.log[pair.log.length - 1]}
+              </p>
+            ) : null}
             <button type="button" className="mt-2 min-h-11 text-left text-xs text-frost" onClick={() => setManual("Order of work")}>
               Open the field manual
             </button>
           </div>
+          <section className="rounded-sm border border-line bg-surface p-3">
+            <div className="flex items-baseline justify-between gap-2">
+              <h2 className="text-sm font-medium text-fg">Standing orders</h2>
+              <button type="button" className="min-h-11 text-xs text-frost" onClick={() => setManual("Standing orders")}>
+                What the list does
+              </button>
+            </div>
+            <button
+              type="button"
+              aria-pressed={follow}
+              className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-left text-sm text-fg"
+              onClick={() => setFollow((value) => !value)}
+            >
+              {follow ? "On. The yard tries this list after each sol." : "Off. A sol only banks power."}
+            </button>
+            <ol className="mt-2">
+              {aims.map((aim, index) => (
+                <li key={aim.id} className="flex items-center gap-2 border-t border-line">
+                  <button
+                    type="button"
+                    aria-pressed={aim.on}
+                    className={`min-h-11 w-12 text-left text-sm ${aim.on ? "text-frost" : "text-muted"}`}
+                    onClick={() => setAims((rows) => toggleAim(rows, aim.id))}
+                  >
+                    {aim.on ? "On" : "Off"}
+                  </button>
+                  <span className="flex-1 text-sm text-fg">{AIM_NAME[aim.id]}</span>
+                  <button
+                    type="button"
+                    className="min-h-11 px-2 text-xs text-muted disabled:opacity-40"
+                    disabled={index === 0}
+                    onClick={() => setAims((rows) => moveAim(rows, index, -1))}
+                  >
+                    Up
+                  </button>
+                  <button
+                    type="button"
+                    className="min-h-11 px-2 text-xs text-muted disabled:opacity-40"
+                    disabled={index === aims.length - 1}
+                    onClick={() => setAims((rows) => moveAim(rows, index, 1))}
+                  >
+                    Down
+                  </button>
+                </li>
+              ))}
+            </ol>
+            <button type="button" className="mt-2 min-h-11 w-full rounded-sm bg-oxide px-3 text-sm font-medium text-bg" onClick={workNow}>
+              Work the list now
+            </button>
+            <ul className="mt-2 flex flex-col gap-1">
+              {pair.log.length === 0 ? (
+                <li className="text-xs text-muted">The list has not worked yet. The buttons below still take one order.</li>
+              ) : (
+                pair.log.map((line, index) => (
+                  <li key={`${index}-${line}`} className={`text-xs ${line === "The list spent nothing." ? "text-oxide" : "text-frost"}`}>
+                    {line}
+                  </li>
+                ))
+              )}
+            </ul>
+          </section>
           <div className="flex flex-col gap-2 rounded-sm border border-line bg-surface p-3">
             <button
               type="button"
