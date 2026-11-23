@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createWorld } from "../climate/model.ts";
 import { createCrust, setFlag } from "../crust/crust.ts";
-import { roofBillKwh, roofCount, roofWarning, sunPaysRoof } from "./bill.ts";
+import { turnHash } from "../turn.ts";
+import { roofBillKwh, roofCount, roofWarning, sharedRoofWarning, sunPaysRoof } from "./bill.ts";
 import { scaleArray } from "./health.ts";
 import { LAMP_BED_KWH } from "./lamp.ts";
 import { arrayKwh, closeSol, createStocks } from "./power.ts";
@@ -36,4 +37,18 @@ test("a sun under the bill drops the roof for both clients", () => {
   assert.equal(b.crust.overrides[0]?.roof, 0);
   assert.equal(a.stocks.batteryKwh, 0);
   assert.equal(b.stocks.batteryKwh, 0);
+});
+
+test("both clients share the warning, and a split says nothing", () => {
+  const world = createWorld();
+  const roof = setFlag(createCrust(), 1, 2, "roof", 1);
+  const stocks = { ...createStocks(), healthMilli: 0, batteryKwh: 0 };
+  const sun = scaleArray(arrayKwh(world), 0);
+  const line = sharedRoofWarning(true, sun, roofCount(roof), 0);
+  assert.equal(line, roofWarning(sun, 1, 0));
+  assert.equal(sharedRoofWarning(false, sun, 1, 0), null);
+  const a = closeSol(world, stocks, roof);
+  const b = closeSol(world, stocks, roof);
+  assert.equal(turnHash(a.world, a.crust, a.stocks), turnHash(b.world, b.crust, b.stocks));
+  assert.equal(a.crust.overrides[0]?.roof, b.crust.overrides[0]?.roof);
 });

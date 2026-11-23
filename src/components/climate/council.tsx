@@ -64,7 +64,7 @@ import { LAMP_BED_KWH, LAMP_G, commitLamp } from "@/lib/yard/lamp";
 import { BED_CAP, commitPlant } from "@/lib/yard/bed";
 import { HELD_MARK, holdGapLine, kilometerHolds } from "@/lib/yard/hold";
 import { vesselLines } from "@/lib/yard/status";
-import { roofCount, roofWarning } from "@/lib/yard/bill";
+import { roofCount, sharedRoofWarning } from "@/lib/yard/bill";
 import { commitCable } from "@/lib/yard/cable";
 import { commitMeter } from "@/lib/yard/meter";
 import { commitPaint } from "@/lib/yard/paint";
@@ -412,14 +412,15 @@ export function Council() {
             {turnA === turnB && holdGapLine(pair.canonCrust, pair.canonStocks) ? (
               <p className="mt-1 text-sm text-muted">{holdGapLine(pair.canonCrust, pair.canonStocks)}</p>
             ) : null}
-            {turnA === turnB &&
-            roofWarning(
+            {sharedRoofWarning(
+              turnA === turnB,
               scaleArray(arrayKwh(world), pair.canonStocks.healthMilli),
               roofCount(pair.canonCrust),
               pair.canonStocks.lamp ? pair.canonStocks.beds * LAMP_BED_KWH : 0,
             ) ? (
               <p className="mt-1 text-sm text-oxide">
-                {roofWarning(
+                {sharedRoofWarning(
+                  turnA === turnB,
                   scaleArray(arrayKwh(world), pair.canonStocks.healthMilli),
                   roofCount(pair.canonCrust),
                   pair.canonStocks.lamp ? pair.canonStocks.beds * LAMP_BED_KWH : 0,

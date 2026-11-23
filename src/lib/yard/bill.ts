@@ -20,3 +20,9 @@ export function roofWarning(sunKwh: number, roofs: number, lampKwh: number): str
   const bill = roofBillKwh(roofs, lampKwh);
   return `This sol's sun is ${sunKwh} kWh. The roof bill is ${bill} kWh.`;
 }
+
+/** The warning is one sentence for both clients. A split hash says nothing. */
+export function sharedRoofWarning(agree: boolean, sunKwh: number, roofs: number, lampKwh: number): string | null {
+  if (!agree) return null;
+  return roofWarning(sunKwh, roofs, lampKwh);
+}
