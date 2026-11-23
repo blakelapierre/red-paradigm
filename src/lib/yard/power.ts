@@ -6,6 +6,7 @@ import { boilWater, ventHydrogen, ventOxygen } from "./open.ts";
 import { grow } from "./biomass.ts";
 import { collectSalvage } from "./collector.ts";
 import { drawCrew } from "./crew.ts";
+import { eat } from "./food.ts";
 import { abrade, scaleArray } from "./health.ts";
 import { KILOPOWER_KWH } from "./kilopower.ts";
 import { keepRoof } from "./upkeep.ts";
@@ -41,6 +42,7 @@ export type Stocks = {
   radiator: number;
   co2Kg: bigint;
   cabinCo2Kg: bigint;
+  foodDebt: number;
 };
 
 export function createStocks(): Stocks {
@@ -66,6 +68,7 @@ export function createStocks(): Stocks {
     radiator: 0,
     co2Kg: 0n,
     cabinCo2Kg: 0n,
+    foodDebt: 0,
   };
 }
 
@@ -80,7 +83,7 @@ export function credit(stocks: Stocks, kwh: number): Stocks {
 }
 
 export function stocksBytes(stocks: Stocks): Uint8Array {
-  const bytes = new Uint8Array(124);
+  const bytes = new Uint8Array(128);
   const view = new DataView(bytes.buffer);
   bytes.set([0x50, 0x57, 0x52, 0x31]);
   view.setUint32(4, stocks.batteryKwh);
@@ -113,6 +116,7 @@ export function stocksBytes(stocks: Stocks): Uint8Array {
   view.setUint32(112, Number(stocks.co2Kg & 0xffffffffn));
   view.setUint32(116, Number((stocks.cabinCo2Kg >> 32n) & 0xffffffffn));
   view.setUint32(120, Number(stocks.cabinCo2Kg & 0xffffffffn));
+  view.setUint32(124, stocks.foodDebt >>> 0);
   return bytes;
 }
 
@@ -138,7 +142,8 @@ export function closeSol(
   const wet = boilWater(kept.crust, boiled);
   const light = ventHydrogen(kept.crust, wet);
   const aired = ventOxygen(kept.crust, light);
-  return { world: next, stocks: shedHeat(grow(kept.crust, aired)), crust: kept.crust };
+  const fed = eat(aired);
+  return { world: next, stocks: shedHeat(grow(kept.crust, fed)), crust: kept.crust };
 }
 
 export function commitPoweredCut(
