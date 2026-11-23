@@ -3,8 +3,10 @@ import { test } from "node:test";
 import { bothSealed, closeIfSealed, closeTable, createTable, publicFace, runSeat, sealSeat, seatSite, tableHash } from "./table.ts";
 import { DEFAULT_AIMS } from "./governor.ts";
 import { CUT_KWH, closeSol, createStocks, stocksBytes } from "./power.ts";
-import { createCrust, setFlag } from "../crust/crust.ts";
 import { createWorld } from "../climate/model.ts";
+import { createCrust, setFlag } from "../crust/crust.ts";
+import { LOFT_KWH, TAU_CAP_MILLI } from "./release.ts";
+import { MILL_FINES_KG } from "./mill.ts";
 
 test("a table is two yards and one climate", () => {
   const table = createTable();
@@ -93,4 +95,30 @@ test("the public face is held or dark, not the warehouse", () => {
   held.cradle.stocks = { ...held.cradle.stocks, cabinO2Kg: 28n, biomassG: 500, debt: 0, foodDebt: 0 };
   assert.equal(publicFace(held).cradle, "held");
   assert.equal(publicFace(held).works, "dark");
+});
+
+test("a loft writes the shared climate for both copies, or for neither", () => {
+  const table = createTable();
+  const site = seatSite(table.climate, "cradle");
+  const rich = { ...table.cradle.stocks, finesKg: MILL_FINES_KG, batteryKwh: LOFT_KWH };
+  table.cradle.stocks = rich;
+  table.cradle.witnessStocks = { ...rich };
+  table.cradle.aims = DEFAULT_AIMS.map((aim) => ({ ...aim, on: aim.id === "veil" }));
+  const ran = runSeat(table, "cradle", site);
+  assert.ok(ran.table.climate.tauAerMilli[site.climateIndex] > 0);
+  assert.equal(ran.table.climate.tauAerMilli[site.climateIndex], ran.table.witness.tauAerMilli[site.climateIndex]);
+  assert.equal(ran.table.works.stocks.finesKg, 0n);
+  assert.ok(ran.table.cradle.stocks.finesKg < MILL_FINES_KG);
+
+  const capped = createTable();
+  const tau = new Uint16Array(capped.witness.tauAerMilli);
+  tau[site.climateIndex] = TAU_CAP_MILLI;
+  capped.witness = { ...capped.witness, tauAerMilli: tau };
+  capped.cradle.stocks = { ...rich };
+  capped.cradle.witnessStocks = { ...rich };
+  capped.cradle.aims = table.cradle.aims;
+  const heldBack = runSeat(capped, "cradle", site);
+  assert.equal(heldBack.table.climate.tauAerMilli[site.climateIndex], 0);
+  assert.equal(heldBack.table.cradle.stocks.finesKg, MILL_FINES_KG);
+  assert.equal(heldBack.table.cradle.stocks.batteryKwh, LOFT_KWH);
 });
