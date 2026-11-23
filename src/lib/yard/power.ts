@@ -155,21 +155,21 @@ export function stocksBytes(stocks: Stocks): Uint8Array {
   return bytes;
 }
 
-/** Bank the array, salvage a stripping sol, draw the crew, pay the roof, then grow. */
-export function closeSol(
-  world: World,
+/** Bank the array, salvage a stripping sol, draw the crew, pay the roof, then grow. The world is already stepped. */
+export function liveSol(
+  before: World,
+  after: World,
   stocks: Stocks,
   crust: Crust,
   index = CRADLE,
-): { world: World; stocks: Stocks; crust: Crust } {
-  const gain = scaleArray(arrayKwh(world, index), stocks.healthMilli);
-  const beforeTau = world.tauAerMilli[index];
-  const next = step(world, { fileStorm: true });
+): { stocks: Stocks; crust: Crust } {
+  const gain = scaleArray(arrayKwh(before, index), stocks.healthMilli);
+  const beforeTau = before.tauAerMilli[index];
   let nextStocks = credit(stocks, gain);
   if (nextStocks.reactor) nextStocks = credit(nextStocks, KILOPOWER_KWH);
-  nextStocks = abrade(nextStocks, stormTau(next.sol, next.storm) > 0.05);
-  if (stormTau(next.sol, next.storm) > 0.05) {
-    const lost = beforeTau - next.tauAerMilli[index];
+  nextStocks = abrade(nextStocks, stormTau(after.sol, after.storm) > 0.05);
+  if (stormTau(after.sol, after.storm) > 0.05) {
+    const lost = beforeTau - after.tauAerMilli[index];
     nextStocks = collectSalvage(nextStocks, lost, cellLat(latIndexOf(index)));
   }
   const kept = keepRoof(crust, drawCrew(nextStocks));
@@ -182,7 +182,18 @@ export function closeSol(
   const grown = grow(kept.crust, fed, lamps.lit);
   const leaked = leakCabin(grown);
   const marked = markHold(kept.crust, leaked);
-  return { world: next, stocks: shedHeat(markStorm(world, next, kept.crust, marked)), crust: kept.crust };
+  return { stocks: shedHeat(markStorm(before, after, kept.crust, marked)), crust: kept.crust };
+}
+
+/** Bank the array, salvage a stripping sol, draw the crew, pay the roof, then grow. */
+export function closeSol(
+  world: World,
+  stocks: Stocks,
+  crust: Crust,
+  index = CRADLE,
+): { world: World; stocks: Stocks; crust: Crust } {
+  const next = step(world, { fileStorm: true });
+  return { world: next, ...liveSol(world, next, stocks, crust, index) };
 }
 
 export function commitPoweredCut(

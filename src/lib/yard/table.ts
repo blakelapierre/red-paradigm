@@ -1,8 +1,8 @@
 import { cellLat, cellLon, latIndexOf, lonIndexOf } from "../climate/constants.ts";
-import { createWorld, siteIndex, surveyPressure, type World } from "../climate/model.ts";
+import { createWorld, siteIndex, step, surveyPressure, type World } from "../climate/model.ts";
 import { cellOf, createCrust, type Crust } from "../crust/crust.ts";
 import { DEFAULT_AIMS, type Aim, type WorkSite } from "./governor.ts";
-import { createStocks, type Stocks } from "./power.ts";
+import { createStocks, liveSol, type Stocks } from "./power.ts";
 
 /** One window is one yard. The other yard is another window, not a second seat here. */
 export type SeatId = "cradle" | "works";
@@ -55,5 +55,30 @@ export function seatSite(world: World, seat: SeatId): WorkSite {
     pressurePa: Math.round(surveyPressure(world.zM[index])),
     climateIndex: index,
     latDeg: lat,
+  };
+}
+
+function liveYard(before: World, after: World, beforeWitness: World, afterWitness: World, seat: SeatYard, index: number): SeatYard {
+  const canon = liveSol(before, after, seat.stocks, seat.crust, index);
+  const witness = liveSol(beforeWitness, afterWitness, seat.witnessStocks, seat.witnessCrust, index);
+  return {
+    ...seat,
+    crust: canon.crust,
+    stocks: canon.stocks,
+    witnessCrust: witness.crust,
+    witnessStocks: witness.stocks,
+    sealedSol: null,
+  };
+}
+
+/** Step the shared climate once. Each yard banks the sun at its own site. */
+export function closeTable(table: Table): Table {
+  const climate = step(table.climate, { fileStorm: true });
+  const witness = step(table.witness, { fileStorm: true });
+  return {
+    climate,
+    witness,
+    cradle: liveYard(table.climate, climate, table.witness, witness, table.cradle, siteIndex("cradle")),
+    works: liveYard(table.climate, climate, table.witness, witness, table.works, siteIndex("works")),
   };
 }
