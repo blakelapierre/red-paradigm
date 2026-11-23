@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { bothSealed, closeIfSealed, closeTable, createTable, publicFace, reduceTable, replaySeals, runSeat, sealSeat, seatFromSearch, seatSite, tableHash, WORKS_FINES_KG } from "./table.ts";
+import { bothSealed, closeIfSealed, closeTable, createTable, publicFace, reduceTable, replaySeals, runSeat, sealSeat, seatFromSearch, seatSite, tableHash, tableWanted, WORKS_FINES_KG } from "./table.ts";
 import { DEFAULT_AIMS } from "./governor.ts";
 import { CUT_KWH, closeSol, createStocks, stocksBytes } from "./power.ts";
 import { createWorld } from "../climate/model.ts";
@@ -176,4 +176,12 @@ test("a seal waits, and a table with the wrong hash is refused", () => {
   assert.equal(replayed.waiting, true);
   assert.equal(replayed.table.works.sealedSol, 0);
   assert.equal(replayed.table.climate.sol, 0);
+});
+
+test("the table is opt-in, so one window is not waiting", () => {
+  assert.equal(tableWanted(""), false);
+  assert.equal(tableWanted("?seat=works"), false);
+  assert.equal(tableWanted("?table=0"), false);
+  assert.equal(tableWanted("?table=1"), true);
+  assert.equal(tableWanted("?table=1&seat=works"), true);
 });

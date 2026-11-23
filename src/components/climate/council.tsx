@@ -42,6 +42,18 @@ import {
   type Aim,
   type Yard,
 } from "@/lib/yard/governor";
+import {
+  createTable,
+  publicFace,
+  reduceTable,
+  replaySeals,
+  seatFromSearch,
+  tableWanted,
+  type SeatId,
+  type SealMsg,
+  type Table,
+  type TableState,
+} from "@/lib/yard/table";
 import { commitRoof } from "@/lib/yard/roof";
 import { commitRoad } from "@/lib/yard/road";
 import { commitBerm } from "@/lib/yard/berm";
@@ -86,6 +98,55 @@ type Pair = {
   log: string[];
   halt: boolean;
 };
+
+const SEAL_KEY = "red-paradigm-seals";
+
+function readSeals(): SealMsg[] {
+  if (typeof localStorage === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(SEAL_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function rememberSeal(msg: SealMsg) {
+  const prior = readSeals();
+  if (prior.some((row) => row.seat === msg.seat && row.sol === msg.sol)) return;
+  localStorage.setItem(SEAL_KEY, JSON.stringify([...prior, msg]));
+}
+
+function pairFrom(table: Table, seat: SeatId, prev: Pair): Pair {
+  const row = table[seat];
+  return {
+    canon: table.climate,
+    witness: table.witness,
+    canonCrust: row.crust,
+    witnessCrust: row.witnessCrust,
+    canonStocks: row.stocks,
+    witnessStocks: row.witnessStocks,
+    log: prev.log,
+    halt: false,
+  };
+}
+
+function writeSeat(table: Table, seat: SeatId, pair: Pair): Table {
+  const row = table[seat];
+  return {
+    ...table,
+    climate: pair.canon,
+    witness: pair.witness,
+    [seat]: {
+      ...row,
+      crust: pair.canonCrust,
+      witnessCrust: pair.witnessCrust,
+      stocks: pair.canonStocks,
+      witnessStocks: pair.witnessStocks,
+    },
+  };
+}
 
 function fresh(): Pair {
   return {
@@ -179,14 +240,56 @@ export function Council() {
   const [manual, setManual] = useState<string | null>(null);
   const [aims, setAims] = useState<Aim[]>(() => DEFAULT_AIMS.map((aim) => ({ ...aim })));
   const [follow, setFollow] = useState(true);
+  const [tableOn, setTableOn] = useState(false);
+  const [seat, setSeat] = useState<SeatId>("cradle");
+  const [tableState, setTableState] = useState<TableState | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const aimsRef = useRef(aims);
   const followRef = useRef(follow);
   const selectedRef = useRef(selected);
+  const tableOnRef = useRef(tableOn);
+  const seatRef = useRef(seat);
+  const pairRef = useRef(pair);
+  const soloRef = useRef<Pair | null>(null);
+  const channelRef = useRef<BroadcastChannel | null>(null);
   aimsRef.current = aims;
   followRef.current = follow;
   selectedRef.current = selected;
+  tableOnRef.current = tableOn;
+  seatRef.current = seat;
+  pairRef.current = pair;
+
+  const sealFromRef = useRef<(p: Pair) => void>(() => {});
+  sealFromRef.current = (p: Pair) => {
+    const who = seatRef.current;
+    const aimsNow = aimsRef.current.map((aim) => ({ ...aim }));
+    setTableState((prev) => {
+      const base = prev ?? { table: createTable(), split: false, waiting: false };
+      const withSeat = writeSeat(base.table, who, p);
+      const msg: SealMsg = { type: "seal", seat: who, aims: aimsNow, sol: withSeat.climate.sol };
+      rememberSeal(msg);
+      channelRef.current?.postMessage(msg);
+      return reduceTable({ ...base, table: withSeat }, msg);
+    });
+  };
+
+  const sit = (on: boolean) => {
+    setPlaying(false);
+    if (!on) {
+      setTableOn(false);
+      if (soloRef.current) setPair(soloRef.current);
+      return;
+    }
+    soloRef.current = pairRef.current;
+    const who: SeatId = typeof window === "undefined" ? "cradle" : seatFromSearch(window.location.search);
+    const state = replaySeals(readSeals());
+    setSeat(who);
+    setTableState(state);
+    setPair(pairFrom(state.table, who, pairRef.current));
+    setSelected(siteIndex(who));
+    setTableOn(true);
+  };
 
   useEffect(() => {
     if (playing && pair.halt) setPlaying(false);
@@ -203,7 +306,8 @@ export function Council() {
       acc += dt;
       if (acc >= 0.4) {
         acc = 0;
-        setPair((p) => applySols(p, 1, aimsRef.current, selectedRef.current, followRef.current));
+        if (tableOnRef.current) sealFromRef.current(pairRef.current);
+        else setPair((p) => applySols(p, 1, aimsRef.current, selectedRef.current, followRef.current));
       }
       raf = requestAnimationFrame(loop);
     };
@@ -212,11 +316,45 @@ export function Council() {
   }, [playing]);
 
   useEffect(() => {
+    if (!tableWanted(window.location.search)) return;
+    sit(true);
+    // The query is the opt-in. A bare window never takes this path.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!tableOn || typeof BroadcastChannel === "undefined") return;
+    const channel = new BroadcastChannel("red-paradigm-table");
+    channelRef.current = channel;
+    channel.onmessage = (event: MessageEvent) => {
+      const msg = event.data as SealMsg | undefined;
+      if (!msg || msg.type !== "seal" || msg.seat === seatRef.current) return;
+      setTableState((prev) => {
+        if (!prev || msg.sol !== prev.table.climate.sol) return prev;
+        return reduceTable(prev, msg);
+      });
+    };
+    return () => {
+      channel.close();
+      if (channelRef.current === channel) channelRef.current = null;
+    };
+  }, [tableOn]);
+
+  useEffect(() => {
+    if (!tableOn || !tableState) return;
+    setPair((p) => pairFrom(tableState.table, seat, p));
+  }, [tableOn, tableState, seat]);
+
+  useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.code !== "Space") return;
       const tag = (event.target as HTMLElement | null)?.tagName;
       if (tag === "BUTTON" || tag === "INPUT") return;
       event.preventDefault();
+      if (tableOnRef.current) {
+        sealFromRef.current(pairRef.current);
+        return;
+      }
       setPair((p) => applySols(p, 1, aimsRef.current, selectedRef.current, followRef.current));
     };
     window.addEventListener("keydown", onKey);
@@ -305,6 +443,10 @@ export function Council() {
   const witnessView = inspect(pair.witness, selected);
 
   const advance = (sols: number) => {
+    if (tableOn) {
+      sealFromRef.current(pair);
+      return;
+    }
     setPair((p) => applySols(p, sols, aims, selected, follow));
   };
 
@@ -433,6 +575,21 @@ export function Council() {
             <button type="button" className="mt-2 min-h-11 text-left text-xs text-frost" onClick={() => setManual("What the list is doing")}>
               Open the field manual
             </button>
+            <div className="mt-2 border-t border-line pt-2">
+              <button type="button" className="min-h-11 text-left text-xs text-frost" onClick={() => sit(!tableOn)}>
+                {tableOn ? "Leave the table" : "Sit at the table"}
+              </button>
+              {tableOn && tableState ? (
+                <p className="mt-1 text-xs text-muted">
+                  This window is {seat === "works" ? "the Works" : "the Low Cradle"}. The other yard is{" "}
+                  {(seat === "cradle" ? publicFace(tableState.table).works : publicFace(tableState.table).cradle) === "held"
+                    ? "held"
+                    : "dark"}
+                  . {tableState.waiting ? "Waiting for the other yard." : "Both yards have sealed this sol."} Leave the table and this
+                  board runs alone.
+                </p>
+              ) : null}
+            </div>
           </div>
           <section className="rounded-sm border border-line bg-surface p-3">
             <div className="flex items-baseline justify-between gap-2">
@@ -541,6 +698,8 @@ export function Council() {
                 className="inline-flex min-h-11 items-center justify-center gap-2 rounded-sm border border-line px-3 text-sm text-fg"
                 onClick={() => {
                   setPlaying(false);
+                  setTableOn(false);
+                  setTableState(null);
                   setPair(fresh());
                   setSelected(siteIndex("cradle"));
                   setCanonCut(null);
