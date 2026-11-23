@@ -170,5 +170,27 @@ test("ten holding sols is the mark, and the air mass only followed the sun", () 
   assert.equal(airKg(world.ls), airKg(stepped.ls));
 });
 
+test("a crew debt zeros the run", () => {
+  const roof = setFlag(createCrust(), 1, 2, "roof", 1);
+  const owed = closeSol(
+    createWorld(),
+    {
+      ...createStocks(),
+      lamp: 1,
+      beds: BED_CAP,
+      cabinO2Kg: CABIN_O2_KG + 1n,
+      biomassG: 500,
+      o2Kg: 0n,
+      waterKg: 28n,
+      heldSols: 6,
+    },
+    roof,
+  );
+  assert.equal(owed.stocks.debt, 1);
+  assert.equal(owed.stocks.heldSols, 0);
+  assert.equal(owed.stocks.o2Kg, 0n);
+  assert.equal(owed.stocks.waterKg, 28n);
+});
+
 
 
