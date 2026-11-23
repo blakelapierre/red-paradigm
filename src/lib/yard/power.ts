@@ -8,6 +8,7 @@ import { grow } from "./biomass.ts";
 import { collectSalvage } from "./collector.ts";
 import { drawCrew } from "./crew.ts";
 import { eat } from "./food.ts";
+import { markHold } from "./hold.ts";
 import { abrade, scaleArray } from "./health.ts";
 import { KILOPOWER_KWH } from "./kilopower.ts";
 import { payLamp } from "./lamp.ts";
@@ -48,6 +49,7 @@ export type Stocks = {
   foodDebt: number;
   lamp: number;
   beds: number;
+  heldSols: number;
   cableOn: number;
   cableIx: number;
   cableIy: number;
@@ -80,6 +82,7 @@ export function createStocks(): Stocks {
     foodDebt: 0,
     lamp: 0,
     beds: 1,
+    heldSols: 0,
     cableOn: 0,
     cableIx: 0,
     cableIy: 0,
@@ -98,7 +101,7 @@ export function credit(stocks: Stocks, kwh: number): Stocks {
 }
 
 export function stocksBytes(stocks: Stocks): Uint8Array {
-  const bytes = new Uint8Array(156);
+  const bytes = new Uint8Array(160);
   const view = new DataView(bytes.buffer);
   bytes.set([0x50, 0x57, 0x52, 0x31]);
   view.setUint32(4, stocks.batteryKwh);
@@ -139,6 +142,7 @@ export function stocksBytes(stocks: Stocks): Uint8Array {
   view.setUint32(144, Number((stocks.cabinO2Kg >> 32n) & 0xffffffffn));
   view.setUint32(148, Number(stocks.cabinO2Kg & 0xffffffffn));
   view.setUint32(152, stocks.beds >>> 0);
+  view.setUint32(156, stocks.heldSols >>> 0);
   return bytes;
 }
 
@@ -167,7 +171,8 @@ export function closeSol(
   const lamps = payLamp(aired);
   const fed = eat(lamps.stocks);
   const grown = grow(kept.crust, fed, lamps.lit);
-  return { world: next, stocks: shedHeat(leakCabin(grown)), crust: kept.crust };
+  const leaked = leakCabin(grown);
+  return { world: next, stocks: shedHeat(markHold(kept.crust, leaked)), crust: kept.crust };
 }
 
 export function commitPoweredCut(

@@ -10,3 +10,8 @@ export function cradleHolding(crust: Crust, stocks: Stocks): boolean {
   if (stocks.debt !== 0) return false;
   return coversRation(stocks);
 }
+
+export function markHold(crust: Crust, stocks: Stocks): Stocks {
+  if (!cradleHolding(crust, stocks)) return stocks.heldSols === 0 ? stocks : { ...stocks, heldSols: 0 };
+  return { ...stocks, heldSols: stocks.heldSols + 1 };
+}
