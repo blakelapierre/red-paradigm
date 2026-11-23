@@ -110,6 +110,11 @@ export function closeIfSealed(table: Table): { table: Table; closed: boolean } {
 
 /** Spend this yard's list. The other yard's stocks and crust are not in the order. */
 export function runSeat(table: Table, seat: SeatId, site: WorkSite = seatSite(table.climate, seat)): { table: Table; landed: string[] } {
+  const other: SeatId = seat === "cradle" ? "works" : "cradle";
+  const foreign = seatSite(table.climate, other);
+  if (site.ix === foreign.ix && site.iy === foreign.iy) {
+    return { table, landed: ["that kilometer is the other yard"] };
+  }
   const row = table[seat];
   const yard: Yard = {
     canon: table.climate,
@@ -120,7 +125,6 @@ export function runSeat(table: Table, seat: SeatId, site: WorkSite = seatSite(ta
     witnessStocks: row.witnessStocks,
   };
   const worked = workList(yard, row.aims, site);
-  const other: SeatId = seat === "cradle" ? "works" : "cradle";
   return {
     landed: worked.landed,
     table: {

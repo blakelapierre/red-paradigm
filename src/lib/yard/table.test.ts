@@ -133,3 +133,18 @@ test("the works starts with a reactor and fines, and it is not already holding",
   assert.equal(publicFace(table).works, "dark");
   assert.equal(publicFace(table).cradle, "dark");
 });
+
+test("the list cannot be pointed at the other yard", () => {
+  const table = createTable();
+  table.cradle.stocks = { ...table.cradle.stocks, batteryKwh: CUT_KWH };
+  table.cradle.witnessStocks = { ...table.cradle.witnessStocks, batteryKwh: CUT_KWH };
+  table.cradle.aims = DEFAULT_AIMS.map((aim) => ({ ...aim, on: aim.id === "cut" }));
+  const works = seatSite(table.climate, "works");
+  const before = table.works.stocks.finesKg;
+  const ran = runSeat(table, "cradle", works);
+  assert.deepEqual(ran.landed, ["that kilometer is the other yard"]);
+  assert.equal(ran.table.cradle.crust.spoilKg, 0n);
+  assert.equal(ran.table.works.crust.spoilKg, 0n);
+  assert.equal(ran.table.cradle.stocks.batteryKwh, CUT_KWH);
+  assert.equal(ran.table.works.stocks.finesKg, before);
+});
