@@ -63,6 +63,7 @@ import { commitDump } from "@/lib/yard/dump";
 import { LAMP_G, commitLamp } from "@/lib/yard/lamp";
 import { BED_CAP, commitPlant } from "@/lib/yard/bed";
 import { HELD_MARK, holdGapLine, kilometerHolds } from "@/lib/yard/hold";
+import { vesselLines } from "@/lib/yard/status";
 import { commitCable } from "@/lib/yard/cable";
 import { commitMeter } from "@/lib/yard/meter";
 import { commitPaint } from "@/lib/yard/paint";
@@ -970,6 +971,13 @@ function Former({
       <p className="mt-1 font-mono text-xs text-muted">
         cell {at.ix}, {at.iy} · seed {seedZm} m · floor {floor} m
       </p>
+      <ul className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
+        {vesselLines(canon, stocks).map((line) => (
+          <li key={line} className="font-mono text-xs text-fg">
+            {line}
+          </li>
+        ))}
+      </ul>
       <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
         <div>
           <dt className="text-xs text-muted">Spoil in the yard</dt>
