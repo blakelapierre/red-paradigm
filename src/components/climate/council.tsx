@@ -62,7 +62,7 @@ import { commitMill } from "@/lib/yard/mill";
 import { commitDump } from "@/lib/yard/dump";
 import { LAMP_G, commitLamp } from "@/lib/yard/lamp";
 import { BED_CAP, commitPlant } from "@/lib/yard/bed";
-import { HELD_MARK, kilometerHolds } from "@/lib/yard/hold";
+import { HELD_MARK, holdGapLine, kilometerHolds } from "@/lib/yard/hold";
 import { commitCable } from "@/lib/yard/cable";
 import { commitMeter } from "@/lib/yard/meter";
 import { commitPaint } from "@/lib/yard/paint";
@@ -400,6 +400,9 @@ export function Council() {
                   ? `This kilometer has held for ${pair.canonStocks.heldSols} sols. The climate cell did not move.`
                   : `Held ${pair.canonStocks.heldSols} of ${HELD_MARK} sols.`}
               </p>
+            ) : null}
+            {turnA === turnB && holdGapLine(pair.canonCrust, pair.canonStocks) ? (
+              <p className="mt-1 text-sm text-muted">{holdGapLine(pair.canonCrust, pair.canonStocks)}</p>
             ) : null}
             <button type="button" className="mt-2 min-h-11 text-left text-xs text-frost" onClick={() => setManual("Order of work")}>
               Open the field manual

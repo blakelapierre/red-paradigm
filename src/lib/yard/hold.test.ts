@@ -4,7 +4,7 @@ import { airKg, createWorld, step } from "../climate/model.ts";
 import { createCrust, setFlag } from "../crust/crust.ts";
 import { turnHash } from "../turn.ts";
 import { BED_CAP } from "./bed.ts";
-import { HELD_MARK, cradleHolding, kilometerHolds, markHold } from "./hold.ts";
+import { HELD_MARK, cradleHolding, holdGap, kilometerHolds, markHold } from "./hold.ts";
 import { CABIN_O2_KG } from "./meter.ts";
 import { closeSol, createStocks, stocksBytes } from "./power.ts";
 import { STALE_CO2_KG, commitVent } from "./vent.ts";
@@ -25,6 +25,23 @@ test("the cradle holds only when the vessel, the meter, the crew, and the ration
   assert.equal(cradleHolding(ok.crust, { ...ok.stocks, foodDebt: 1 }), false);
   assert.equal(cradleHolding(ok.crust, { ...ok.stocks, biomassG: 499 }), false);
 });
+
+test("the gap names one missing piece, and nothing when the sol would count", () => {
+  const bare = createCrust();
+  assert.equal(holdGap(bare, createStocks()), "roof");
+  const roof = setFlag(bare, 1, 2, "roof", 1);
+  assert.equal(holdGap(roof, createStocks()), "lamp");
+  assert.equal(holdGap(roof, { ...createStocks(), lamp: 1 }), "beds");
+  const short = { ...createStocks(), lamp: 1, beds: 25, waterKg: 0n, o2Kg: 1n, cabinO2Kg: 28n, biomassG: 0 };
+  assert.equal(holdGap(roof, short), "water");
+  assert.equal(holdGap(roof, { ...short, waterKg: 28n, o2Kg: 0n }), "oxygen");
+  assert.equal(holdGap(roof, { ...short, waterKg: 28n, cabinO2Kg: 0n }), "meter");
+  assert.equal(holdGap(roof, { ...short, waterKg: 28n, cabinCo2Kg: 5n }), "vent");
+  assert.equal(holdGap(roof, { ...short, waterKg: 28n, debt: 1 }), "debt");
+  assert.equal(holdGap(roof, { ...short, waterKg: 28n }), "food");
+  assert.equal(holdGap(roof, { ...short, waterKg: 28n, biomassG: 500 }), null);
+});
+
 
 test("a holding sol advances the run, and a miss zeros it", () => {
   const roof = setFlag(createCrust(), 1, 2, "roof", 1);
