@@ -47,6 +47,8 @@ The council map is a climate tick and one former, not the whole game.
 - The kilometer holds. A sol counts when a roof is up, the cabin still has 28 kg after the seal, the crew is not in debt, and the store still has 500 g. A miss zeros the run. Ten such sols is the mark. Both clients reach it together, or the board does not say so. The air mass stays on solar longitude. This is not a sky.
 - A field manual. Each order says what it does, what it costs, what it refuses, and what it does not move. The figures are the constants the board spends.
 - Standing orders. The player ranks Power, Cut, Mill, Shelter, Ration, Water, and Fuel. Those start on. Ration plants one bed. Each sol the yard tries the list once, if the player leaves it on. A refusal spends nothing and does not stop the next aim. Column, veil, ground, and the array start off. Heat, burn, the cable, and the dump stay on the buttons.
+- Keep. Once the floor is a roof, a lamp, and twenty-five beds, the list stops cutting, milling, and lofting. While the hold is open it pays the roof and the beds before a dig. A sun under the roof bill drops the roof and does not spend the short battery. Shelter can raise it again. The buttons stay.
+- The storm. A run that never misses while dust is stripping is marked when the storm ends. A later miss does not clear that mark. The board says the kilometer held through the storm. The air mass did not change.
 - One turn hash over the climate record, the crust record, and the stocks. They stay together. The hash does not split.
 
 `node_modules` is not in the repo. Install, then:
