@@ -4,6 +4,7 @@ import { type Stocks } from "./power.ts";
 /** One batch out of the yard. Five percent of the mass is iron and aluminum fines. */
 export const MILL_SPOIL_KG = 100_000_000n;
 export const MILL_FINES_KG = 5_000_000n;
+export const MILL_TAILINGS_KG = MILL_SPOIL_KG - MILL_FINES_KG;
 export const MILL_KWH = 1_000_000;
 /** Ten batches. The warehouse is not the pit. */
 export const FINES_CAP_KG = 50_000_000n;
@@ -32,7 +33,11 @@ export function commitMill(a: Crust, b: Crust, aStocks: Stocks, bStocks: Stocks)
   if (aStocks.finesKg + MILL_FINES_KG > FINES_CAP_KG || bStocks.finesKg + MILL_FINES_KG > FINES_CAP_KG) {
     return refuse(a, b, aStocks, bStocks, `warehouse holds ${FINES_CAP_KG.toString()} kg`);
   }
-  const take = (crust: Crust): Crust => ({ ...crust, spoilKg: crust.spoilKg - MILL_SPOIL_KG });
+  const take = (crust: Crust): Crust => ({
+    ...crust,
+    spoilKg: crust.spoilKg - MILL_SPOIL_KG,
+    tailingsKg: crust.tailingsKg + MILL_TAILINGS_KG,
+  });
   const spend = (stocks: Stocks): Stocks => ({
     ...stocks,
     batteryKwh: stocks.batteryKwh - MILL_KWH,
@@ -44,6 +49,6 @@ export function commitMill(a: Crust, b: Crust, aStocks: Stocks, bStocks: Stocks)
     aStocks: spend(aStocks),
     bStocks: spend(bStocks),
     accepted: true,
-    reason: "batch milled",
+    reason: "batch milled. the other 95 percent is tailings",
   };
 }

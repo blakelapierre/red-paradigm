@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createCrust, crustHash } from "../crust/crust.ts";
-import { commitMill, FINES_CAP_KG, MILL_FINES_KG, MILL_KWH, MILL_SPOIL_KG } from "./mill.ts";
+import { commitMill, FINES_CAP_KG, MILL_FINES_KG, MILL_KWH, MILL_SPOIL_KG, MILL_TAILINGS_KG } from "./mill.ts";
 import { createStocks } from "./power.ts";
 
 function loaded() {
@@ -17,6 +17,8 @@ test("a mill batch is five percent fines and both clients move together", () => 
   const milled = commitMill(crust, crust, stocks, stocks);
   assert.equal(milled.accepted, true);
   assert.equal(milled.a.spoilKg, 0n);
+  assert.equal(milled.a.tailingsKg, MILL_TAILINGS_KG);
+  assert.equal(milled.aStocks.finesKg + milled.a.tailingsKg, MILL_SPOIL_KG);
   assert.equal(milled.aStocks.finesKg, MILL_FINES_KG);
   assert.equal(milled.aStocks.batteryKwh, 0);
   assert.equal(crustHash(milled.a), crustHash(milled.b));

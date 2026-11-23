@@ -36,6 +36,7 @@ export type Crust = {
   seed: number;
   holdKg: bigint;
   spoilKg: bigint;
+  tailingsKg: bigint;
   overrides: readonly Override[];
 };
 
@@ -53,7 +54,7 @@ export type DigResult = {
 };
 
 export function createCrust(seed = 0x52454431): Crust {
-  return { seed, holdKg: YARD_KG, spoilKg: 0n, overrides: [] };
+  return { seed, holdKg: YARD_KG, spoilKg: 0n, tailingsKg: 0n, overrides: [] };
 }
 
 export function cellOf(latDeg: number, lonDeg: number): { ix: number; iy: number } {
@@ -124,15 +125,16 @@ export function beforeHash(crust: Crust, ix: number, iy: number): string {
 
 export function crustBytes(crust: Crust): Uint8Array {
   const n = crust.overrides.length;
-  const bytes = new Uint8Array(4 + 4 + 8 + 8 + 4 + n * OVERRIDE_STRIDE);
+  const bytes = new Uint8Array(4 + 4 + 8 + 8 + 8 + 4 + n * OVERRIDE_STRIDE);
   const view = new DataView(bytes.buffer);
   bytes.set([0x43, 0x52, 0x53, 0x54]);
   writeU32(view, 4, crust.seed >>> 0);
   writeU64(view, 8, crust.holdKg);
   writeU64(view, 16, crust.spoilKg);
-  writeU32(view, 24, n);
+  writeU64(view, 24, crust.tailingsKg);
+  writeU32(view, 32, n);
   crust.overrides.forEach((row, i) => {
-    const at = 28 + i * OVERRIDE_STRIDE;
+    const at = 36 + i * OVERRIDE_STRIDE;
     writeI32(view, at, row.ix);
     writeI32(view, at + 4, row.iy);
     writeI32(view, at + 8, row.dzCm);
@@ -225,7 +227,7 @@ export function applyDig(crust: Crust, op: DigOp): DigResult {
   }
   return {
     crust: {
-      seed: crust.seed,
+      ...crust,
       holdKg: crust.holdKg - spoil,
       spoilKg: crust.spoilKg + spoil,
       overrides: withOverride(crust.overrides, op.ix, op.iy, op.dzCm),
