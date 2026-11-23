@@ -1,9 +1,10 @@
 import { cellLat, cellLon, latIndexOf, lonIndexOf } from "../climate/constants.ts";
 import { sha256, toHex } from "../climate/hash.ts";
-import { createWorld, siteIndex, step, surveyPressure, type World } from "../climate/model.ts";
+import { createWorld, siteIndex, step, stormTau, surveyPressure, type World } from "../climate/model.ts";
 import { cellOf, createCrust, type Crust } from "../crust/crust.ts";
 import { turnHash } from "../turn.ts";
 import { DEFAULT_AIMS, workList, type Aim, type WorkSite, type Yard } from "./governor.ts";
+import { cradleHolding, kilometerHolds } from "./hold.ts";
 import { createStocks, liveSol, type Stocks } from "./power.ts";
 
 /** One window is one yard. The other yard is another window, not a second seat here. */
@@ -143,4 +144,30 @@ export function tableHash(table: Table): string {
     turnHash(table.witness, table.works.witnessCrust, table.works.witnessStocks),
   ].join("\n");
   return toHex(sha256(new TextEncoder().encode(lines)));
+}
+
+export type FaceBit = "held" | "dark";
+
+export type PublicFace = {
+  sol: number;
+  ls: number;
+  storming: boolean;
+  cradle: FaceBit;
+  works: FaceBit;
+};
+
+/** Held or dark. Not the warehouse. */
+export function faceBit(crust: Crust, stocks: Stocks): FaceBit {
+  if (stocks.stormHeld === 1 || kilometerHolds(stocks) || cradleHolding(crust, stocks)) return "held";
+  return "dark";
+}
+
+export function publicFace(table: Table): PublicFace {
+  return {
+    sol: table.climate.sol,
+    ls: table.climate.ls,
+    storming: stormTau(table.climate.sol, table.climate.storm) > 0.05,
+    cradle: faceBit(table.cradle.crust, table.cradle.stocks),
+    works: faceBit(table.works.crust, table.works.stocks),
+  };
 }

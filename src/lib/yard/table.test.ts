@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { bothSealed, closeIfSealed, closeTable, createTable, runSeat, sealSeat, seatSite, tableHash } from "./table.ts";
+import { bothSealed, closeIfSealed, closeTable, createTable, publicFace, runSeat, sealSeat, seatSite, tableHash } from "./table.ts";
 import { DEFAULT_AIMS } from "./governor.ts";
 import { CUT_KWH, closeSol, createStocks, stocksBytes } from "./power.ts";
-import { createCrust } from "../crust/crust.ts";
+import { createCrust, setFlag } from "../crust/crust.ts";
 import { createWorld } from "../climate/model.ts";
 
 test("a table is two yards and one climate", () => {
@@ -75,4 +75,22 @@ test("the table hash covers both yards, and a dropped storm splits", () => {
   assert.notEqual(tableHash(dropped), tableHash(a));
   const richer = { ...a, works: { ...a.works, stocks: { ...a.works.stocks, finesKg: 1n } } };
   assert.notEqual(tableHash(richer), tableHash(a));
+});
+
+test("the public face is held or dark, not the warehouse", () => {
+  const open = publicFace(createTable());
+  assert.deepEqual(
+    { cradle: open.cradle, works: open.works, storming: open.storming },
+    { cradle: "dark", works: "dark", storming: false },
+  );
+  assert.equal(JSON.stringify(open).includes("Kg"), false);
+  const piled = createTable();
+  piled.works.stocks = { ...piled.works.stocks, finesKg: 9_000_000n, batteryKwh: 50_000 };
+  assert.equal(publicFace(piled).works, "dark");
+  assert.equal(publicFace(piled).cradle, publicFace(createTable()).cradle);
+  const held = createTable();
+  held.cradle.crust = setFlag(createCrust(), 1, 2, "roof", 1);
+  held.cradle.stocks = { ...held.cradle.stocks, cabinO2Kg: 28n, biomassG: 500, debt: 0, foodDebt: 0 };
+  assert.equal(publicFace(held).cradle, "held");
+  assert.equal(publicFace(held).works, "dark");
 });
