@@ -6,6 +6,7 @@ import { BED_CAP } from "./bed.ts";
 import { cradleHolding, markHold } from "./hold.ts";
 import { CABIN_O2_KG } from "./meter.ts";
 import { closeSol, createStocks, stocksBytes } from "./power.ts";
+import { STALE_CO2_KG } from "./vent.ts";
 
 function ready() {
   return {
@@ -67,3 +68,30 @@ test("a holding sol advances the run, and a miss zeros it", () => {
   assert.equal(new DataView(marked.buffer).getUint32(156), 4);
   assert.notEqual(Buffer.from(plain).toString("hex"), Buffer.from(marked).toString("hex"));
 });
+
+test("five breaths without a vent zero the run", () => {
+  const roof = setFlag(createCrust(), 1, 2, "roof", 1);
+  let world = createWorld();
+  let stocks = {
+    ...createStocks(),
+    lamp: 1,
+    beds: BED_CAP,
+    cabinO2Kg: CABIN_O2_KG + STALE_CO2_KG,
+    biomassG: 500,
+    o2Kg: STALE_CO2_KG,
+    waterKg: 28n * STALE_CO2_KG,
+  };
+  let crust = roof;
+  for (let sol = 1; sol < Number(STALE_CO2_KG); sol++) {
+    const closed = closeSol(world, stocks, crust);
+    world = closed.world;
+    stocks = closed.stocks;
+    crust = closed.crust;
+    assert.equal(stocks.heldSols, sol);
+  }
+  const stale = closeSol(world, stocks, crust);
+  assert.equal(stale.stocks.cabinCo2Kg, STALE_CO2_KG);
+  assert.equal(stale.stocks.biomassG, 0);
+  assert.equal(stale.stocks.heldSols, 0);
+});
+
