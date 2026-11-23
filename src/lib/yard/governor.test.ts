@@ -177,4 +177,20 @@ test("the run stops on a quiet sol, and on the mark", () => {
   assert.equal(marked.yard.witnessStocks.heldSols, 10);
 });
 
+test("a finished floor is not cut or milled", () => {
+  const roof = setFlag(createCrust(), 1, 2, "roof", 1);
+  const yard = freshYard();
+  yard.canonCrust = { ...roof, spoilKg: 100_000_000n };
+  yard.witnessCrust = { ...roof, spoilKg: 100_000_000n };
+  const stocks = { ...yard.canonStocks, lamp: 1, beds: 25, batteryKwh: CUT_KWH, finesKg: 5_000_000n };
+  yard.canonStocks = stocks;
+  yard.witnessStocks = stocks;
+  const aims = DEFAULT_AIMS.map((aim) => ({ ...aim, on: aim.id === "cut" || aim.id === "mill" }));
+  const worked = workList(yard, aims, cradleSite());
+  assert.equal(worked.yard.canonCrust.spoilKg, 100_000_000n);
+  assert.equal(worked.yard.canonStocks.batteryKwh, CUT_KWH);
+  assert.equal(worked.landed.length, 0);
+});
+
+
 

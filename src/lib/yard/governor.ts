@@ -1,7 +1,7 @@
 import { type World } from "../climate/model.ts";
 import { type Crust } from "../crust/crust.ts";
 import { commitBerm } from "./berm.ts";
-import { commitBeds } from "./bed.ts";
+import { commitBeds, BED_CAP } from "./bed.ts";
 import { commitCollector } from "./collector.ts";
 import { commitCompress } from "./compress.ts";
 import { commitCondenser } from "./condenser.ts";
@@ -182,7 +182,7 @@ function runAim(yard: Yard, id: AimId, site: WorkSite, landed: string[]): Yard {
   return yard;
 }
 
-/** One pass. An aim that is off is skipped. A refusal spends nothing and does not stop the next aim. */
+/** One pass. An aim that is off is skipped. A refusal spends nothing and does not stop the next aim. Once both floors are in, the list does not cut or mill. */
 export function workList(
   yard: Yard,
   aims: readonly Aim[],
@@ -190,11 +190,18 @@ export function workList(
 ): { yard: Yard; landed: string[] } {
   const landed: string[] = [];
   let next = yard;
+  const floored =
+    floorReady(yard.canonCrust, yard.canonStocks) && floorReady(yard.witnessCrust, yard.witnessStocks);
   for (const aim of aims) {
     if (!aim.on) continue;
+    if (floored && (aim.id === "cut" || aim.id === "mill")) continue;
     next = runAim(next, aim.id, site, landed);
   }
   return { yard: next, landed };
+}
+
+function floorReady(crust: Crust, stocks: Stocks): boolean {
+  return crust.overrides.some((row) => row.roof === 1) && stocks.lamp === 1 && stocks.beds >= BED_CAP;
 }
 
 /** Close sols, then one pass of the list after each close, if the yard is set to follow. Stops when the mark lands, or when a followed sol spends nothing. */
