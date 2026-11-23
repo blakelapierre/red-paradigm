@@ -1,6 +1,7 @@
 import { type World } from "../climate/model.ts";
 import { type Crust } from "../crust/crust.ts";
 import { commitBerm } from "./berm.ts";
+import { commitPlant } from "./bed.ts";
 import { commitCollector } from "./collector.ts";
 import { commitCompress } from "./compress.ts";
 import { commitCondenser } from "./condenser.ts";
@@ -22,7 +23,7 @@ import { commitVent } from "./vent.ts";
 import { commitWash } from "./wash.ts";
 
 /** A general aim. The buttons still issue one order. The list is not a second physics. */
-export type AimId = "power" | "cut" | "mill" | "shelter" | "water" | "fuel" | "column" | "veil" | "ground" | "array";
+export type AimId = "power" | "cut" | "mill" | "shelter" | "ration" | "water" | "fuel" | "column" | "veil" | "ground" | "array";
 
 export type Aim = { id: AimId; on: boolean };
 
@@ -31,6 +32,7 @@ export const AIM_NAME: Record<AimId, string> = {
   cut: "Cut",
   mill: "Mill",
   shelter: "Shelter",
+  ration: "Ration",
   water: "Water",
   fuel: "Fuel",
   column: "Column",
@@ -44,6 +46,7 @@ export const DEFAULT_AIMS: readonly Aim[] = [
   { id: "cut", on: true },
   { id: "mill", on: true },
   { id: "shelter", on: true },
+  { id: "ration", on: true },
   { id: "water", on: true },
   { id: "fuel", on: true },
   { id: "column", on: false },
@@ -121,6 +124,9 @@ function runAim(yard: Yard, id: AimId, site: WorkSite, landed: string[]): Yard {
     next = takeStocks(next, commitVent(next.canonStocks, next.witnessStocks, next.canon), landed);
     next = takeStocks(next, commitLamp(next.canonCrust, next.witnessCrust, next.canonStocks, next.witnessStocks), landed);
     return takeStocks(next, commitRadiator(next.canonStocks, next.witnessStocks), landed);
+  }
+  if (id === "ration") {
+    return takeStocks(yard, commitPlant(yard.canonCrust, yard.witnessCrust, yard.canonStocks, yard.witnessStocks), landed);
   }
   if (id === "water") {
     const mined = takeStocks(yard, commitMine(yard.canonStocks, yard.witnessStocks, pressurePa), landed);

@@ -2,8 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { cellLat, cellLon, latIndexOf, lonIndexOf } from "../climate/constants.ts";
 import { createWorld, siteIndex, surveyPressure } from "../climate/model.ts";
-import { cellOf, createCrust } from "../crust/crust.ts";
+import { cellOf, createCrust, setFlag } from "../crust/crust.ts";
 import { turnHash } from "../turn.ts";
+import { BED_FINES_KG } from "./bed.ts";
 import { CRADLE_CELL } from "./cable.ts";
 import { DEFAULT_AIMS, bankSols, moveAim, toggleAim, workList, type WorkSite, type Yard } from "./governor.ts";
 import { CUT_KWH, createStocks } from "./power.ts";
@@ -112,3 +113,37 @@ test("moving an aim does not drop one", () => {
   assert.equal(moved.length, DEFAULT_AIMS.length);
   assert.deepEqual(moveAim(DEFAULT_AIMS, 0, -1).map((aim) => aim.id), DEFAULT_AIMS.map((aim) => aim.id));
 });
+
+test("ration plants one bed and does not cut or loft", () => {
+  const site = cradleSite();
+  const roof = setFlag(createCrust(), 1, 2, "roof", 1);
+  const yard = freshYard();
+  yard.canonCrust = roof;
+  yard.witnessCrust = roof;
+  yard.canonStocks = { ...yard.canonStocks, finesKg: BED_FINES_KG, reactor: 1 };
+  yard.witnessStocks = { ...yard.witnessStocks, finesKg: BED_FINES_KG, reactor: 1 };
+  const aims = DEFAULT_AIMS.map((aim) => ({ ...aim, on: aim.id === "ration" }));
+  const worked = workList(yard, aims, site);
+  assert.deepEqual(worked.landed, ["one bed planted. the climate cell did not move"]);
+  assert.equal(worked.yard.canonStocks.beds, 2);
+  assert.equal(worked.yard.witnessStocks.beds, 2);
+  assert.equal(worked.yard.canonCrust.spoilKg, 0n);
+  assert.equal(worked.yard.canon.tauAerMilli[site.climateIndex], 0);
+  agree(worked.yard);
+
+  const idle = workList(yard, toggleAim(aims, "ration"), site);
+  assert.equal(idle.yard.canonStocks.beds, 1);
+  assert.equal(idle.landed.length, 0);
+
+  const short = freshYard();
+  short.canonCrust = roof;
+  short.witnessCrust = roof;
+  short.canonStocks = { ...short.canonStocks, finesKg: BED_FINES_KG, reactor: 1 };
+  const before = turnHash(short.witness, short.witnessCrust, short.witnessStocks);
+  const missed = workList(short, aims, site);
+  assert.equal(missed.landed.length, 0);
+  assert.equal(missed.yard.canonStocks.beds, 1);
+  assert.equal(missed.yard.canonStocks.finesKg, BED_FINES_KG);
+  assert.equal(turnHash(missed.yard.witness, missed.yard.witnessCrust, missed.yard.witnessStocks), before);
+});
+
