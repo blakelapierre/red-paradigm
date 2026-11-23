@@ -27,11 +27,12 @@ The council map is a climate tick and one former, not the whole game.
 - One road. 20,000 kg of fines on one kilometer. The climate cell does not move.
 - One berm. 20,000 kg of fines. The climate cell's temperature amplitude does not move.
 - The crew. One kilogram of oxygen and three kilograms of water each sol. Short either one and the sol is owed. Nothing is spent on a debt. A breathed sol puts one kilogram of CO2 in the cabin. That is the order of the oxygen they took, not a new atmosphere.
-- Vent one kilogram of cabin CO2 for 5 kWh. The air mass does not move. At 5 kg left in the cabin, the gram of biomass does not grow.
-- Roof upkeep. 10,000 kWh a sol, taken after the array is banked. If the battery cannot pay, the roof flags come down. The climate cell does not move.
-- One gram of biomass a sol, under a roof, with clean water and no debt, and cabin CO2 under 5 kg. It spends one kilogram of water. It does not touch the air.
-- Food. The crew eats 500 g of biomass a sol, or the sol is short of food. The plot grows one gram. Today's gram does not pay today's ration.
-- A lamp. 20,000 kg of fines, under a roof. Growth becomes 20 g a sol. That is still not a ration.
+- Vent one kilogram of cabin CO2 for 5 kWh. The air mass does not move. At 5 kg left in the cabin, the beds do not grow, and a holding run returns to zero.
+- Roof upkeep. 10,000 kWh a sol, taken after the array is banked. If the battery cannot pay, the roof flags come down and a holding run returns to zero. The climate cell does not move.
+- One gram of biomass a bed a sol, under a roof, with clean water and no debt, and cabin CO2 under 5 kg. Water is one kilogram a bed, or that sol grows nothing. It does not touch the air.
+- Food. The crew eats 500 g a sol, or the sol is short. Eat runs before grow. Twenty-five lit beds put 500 g back, so the next sol can eat and still end with a ration in store. The sol that fills an empty store is still short. Twenty-four lit beds do not hold that.
+- A lamp. 20,000 kg of fines, under a roof. Each lit bed grows 20 g. The sol bills 10 kWh a bed after the roof. If the battery cannot pay, nothing is spent and the beds grow the dark gram. Twenty-five dark beds are 25 g.
+- A bed. The yard starts with one. Another costs 200,000 kg of fines, and only under a roof. Twenty-four added beds are 4,800,000 kg. One mill batch is 5,000,000 kg and leaves 200,000 kg, which the cap will not spend. The twenty-sixth bed is refused for both clients. The climate cell does not move.
 - A collector. 30,000 kg of fines. On a stripping sol it returns a tenth of the particle mass that left the array's climate cell, up to the warehouse cap. A clear sol returns nothing. Five grams per square meter per optical depth is an order of magnitude.
 - Array health. It starts at 1000/1000 and scales the array the board shows. A stripping sol takes 10 off after that sol is banked. Repair spends 10,000 kg of fines and puts 100 back.
 - One kilopower. 10 kW for 24 hours is 240 kWh a sol, added after the array and not scaled by dust or panel health. It starts once, for both clients.
@@ -42,9 +43,10 @@ The council map is a climate tick and one former, not the whole game.
 - Vessel heat. 10,000 kWh raises the inside by 1 K, up to 40 K above the yard. There is no heat without a roof. The climate cell does not move.
 - A condenser. 50 kWh takes 1 kg of water from the column over one kilometer, about 10,000 kg at 10 grams per square meter. That figure is an order of magnitude. At 10,000 kg the order refuses. The air mass does not move, and this board does not invent a wind to refill the column.
 - Electrolysis heat. About 40 kWh of the 200 does not stay in the hydrogen. Past 80 kWh the cell refuses. The open yard sheds 40 kWh a sol. A radiator costs 20,000 kg of fines and sheds 200.
-- Cabin oxygen. 10 kWh meters 28 kg into a 100 m³ cabin. That is about 21 kPa. There is no nitrogen buffer. This is not breathable air, and it does not move the climate cell.
+- Cabin oxygen. 10 kWh meters 28 kg into a 100 m³ cabin. That is about 21 kPa. There is no nitrogen buffer. This is not breathable air. Each sol the seal loses 1 kg. It is not returned to the tank, and it does not move the climate cell.
+- The kilometer holds. A sol counts when a roof is up, the cabin still has 28 kg after the seal, the crew is not in debt, and the store still has 500 g. A miss zeros the run. Ten such sols is the mark. Both clients reach it together, or the board does not say so. The air mass stays on solar longitude. This is not a sky.
 - A field manual. Each order says what it does, what it costs, what it refuses, and what it does not move. The figures are the constants the board spends.
-- Standing orders. The player ranks Power, Cut, Mill, Shelter, Water, and Fuel. Those start on. Each sol the yard tries the list once, if the player leaves it on. A refusal spends nothing and does not stop the next aim. Column, veil, ground, and the array start off. Heat, burn, the cable, and the dump stay on the buttons.
+- Standing orders. The player ranks Power, Cut, Mill, Shelter, Ration, Water, and Fuel. Those start on. Ration plants one bed. Each sol the yard tries the list once, if the player leaves it on. A refusal spends nothing and does not stop the next aim. Column, veil, ground, and the array start off. Heat, burn, the cable, and the dump stay on the buttons.
 - One turn hash over the climate record, the crust record, and the stocks. They stay together. The hash does not split.
 
 `node_modules` is not in the repo. Install, then:
