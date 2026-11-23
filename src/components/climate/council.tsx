@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type MouseEvent } from "react";
-import { Pause, Play, RotateCcw, SunMedium, Wind } from "lucide-react";
+import { BookOpen, Pause, Play, RotateCcw, SunMedium, Wind } from "lucide-react";
 import {
   CELL_COUNT,
   LON_COLS,
@@ -31,6 +31,7 @@ import {
   type Crust,
 } from "@/lib/crust/crust";
 import { turnHash } from "@/lib/turn";
+import { FieldManual } from "@/components/climate/manual";
 import { commitRoof } from "@/lib/yard/roof";
 import { commitRoad } from "@/lib/yard/road";
 import { commitBerm } from "@/lib/yard/berm";
@@ -138,6 +139,7 @@ export function Council() {
   const [selected, setSelected] = useState(() => siteIndex("cradle"));
   const [canonCut, setCanonCut] = useState<CutNote | null>(null);
   const [witnessCut, setWitnessCut] = useState<CutNote | null>(null);
+  const [manual, setManual] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
 
@@ -275,11 +277,21 @@ export function Council() {
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6">
       <header className="flex flex-col gap-2 border-b border-line pb-4">
-        <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-xl font-medium tracking-wide text-fg">Red Paradigm</h1>
-          <p className="font-mono text-sm text-frost">
-            Sol {world.sol.toString().padStart(3, "0")} · Ls {world.ls.toFixed(1)}° · {seasonLabel(world.ls)}
-          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              className="inline-flex min-h-11 items-center gap-2 rounded-sm border border-line px-3 text-sm text-fg"
+              onClick={() => setManual((open) => (open === null ? "Order of work" : null))}
+            >
+              <BookOpen className="size-4" aria-hidden />
+              {manual === null ? "Field manual" : "Show the map"}
+            </button>
+            <p className="font-mono text-sm text-frost">
+              Sol {world.sol.toString().padStart(3, "0")} · Ls {world.ls.toFixed(1)}° · {seasonLabel(world.ls)}
+            </p>
+          </div>
         </div>
         <p className="max-w-3xl text-sm text-muted">
           Datum pressure, one sol of heat, a particle release, and a storm that is a line in the log. A former can cut one pit. The climate cell does not move.
@@ -288,6 +300,10 @@ export function Council() {
 
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <section className="flex min-w-0 flex-col gap-3">
+          {manual !== null ? (
+            <FieldManual title={manual} />
+          ) : (
+            <>
           <div ref={wrapRef} className="overflow-hidden rounded-sm border border-line bg-surface">
             <canvas
               ref={canvasRef}
@@ -318,6 +334,8 @@ export function Council() {
               </span>
             ) : null}
           </div>
+            </>
+          )}
         </section>
 
         <aside className="flex flex-col gap-3 lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)] lg:overflow-y-auto">
@@ -330,6 +348,9 @@ export function Council() {
               Both clients: {witnessCut ? witnessCut.reason : "no order yet"}
               {turnA === turnB ? " · AGREE" : " · HASH SPLIT"}
             </p>
+            <button type="button" className="mt-2 min-h-11 text-left text-xs text-frost" onClick={() => setManual("Order of work")}>
+              Open the field manual
+            </button>
           </div>
           <div className="flex flex-col gap-2 rounded-sm border border-line bg-surface p-3">
             <button
@@ -387,9 +408,9 @@ export function Council() {
                 Reset
               </button>
             </div>
-            <p className="text-xs text-muted">
-              Lofting spends 5,000,000 kg of fines and 200,000 kWh. Five grams per square meter is optical depth 1, so one batch is a thin veil over this climate cell, not τ 0.80. It does warm the cell, until τ 0.60, where 15 K is already the cap. It does not move the CO₂ bar.
-            </p>
+            <button type="button" className="min-h-11 text-left text-xs text-frost" onClick={() => setManual("Release particles here")}>
+              What this loft is
+            </button>
           </div>
 
           <Former
@@ -587,6 +608,7 @@ export function Council() {
               setWitnessCut({ accepted: up.accepted, reason: up.reason });
               setPair((p) => ({ ...p, canonStocks: up.a, witnessStocks: up.b }));
             }}
+            onManual={setManual}
             climateAlbedoMilli={world.albedoMilli[selected]}
           />
 
@@ -694,6 +716,7 @@ function OrderButton({
   which,
   note,
   onClick,
+  onManual,
   children,
   primary,
 }: {
@@ -701,29 +724,32 @@ function OrderButton({
   which: string | null;
   note: CutNote | null;
   onClick: () => void;
+  onManual: (title: string) => void;
   children: string;
   primary?: boolean;
 }) {
   const hot = which === id && note !== null;
   const accepted = hot && note.accepted;
   const refused = hot && !note.accepted;
+  const tone = accepted
+    ? "border border-frost bg-surface text-frost"
+    : refused
+      ? "border border-oxide bg-surface text-oxide"
+      : primary
+        ? "bg-oxide font-medium text-bg"
+        : "border border-line text-fg";
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`min-h-11 rounded-sm px-3 py-2 text-left text-sm ${
-        accepted
-          ? "border border-frost bg-surface text-frost"
-          : refused
-            ? "border border-oxide bg-surface text-oxide"
-            : primary
-              ? "bg-oxide font-medium text-bg"
-              : "border border-line text-fg"
-      }`}
-    >
-      <span className="block">{children}</span>
-      {hot ? <span className="mt-1 block text-xs leading-snug">{note.reason}</span> : null}
-    </button>
+    <div className={`rounded-sm px-3 py-2 text-sm ${tone}`}>
+      <button type="button" onClick={onClick} className="min-h-11 w-full text-left text-inherit">
+        <span className="block">{children}</span>
+        {hot ? <span className="mt-1 block text-xs leading-snug">{note.reason}</span> : null}
+      </button>
+      {hot ? (
+        <button type="button" className="mt-1 min-h-11 text-left text-xs underline" onClick={() => onManual(children)}>
+          In the manual
+        </button>
+      ) : null}
+    </div>
   );
 }
 
@@ -760,6 +786,7 @@ function Former({
   onHeat,
   onDraw,
   onRadiator,
+  onManual,
   climateAlbedoMilli,
 }: {
   seedZm: number;
@@ -794,6 +821,7 @@ function Former({
   onHeat: () => void;
   onDraw: () => void;
   onRadiator: () => void;
+  onManual: (title: string) => void;
   climateAlbedoMilli: number;
 }) {
   const [which, setWhich] = useState<string | null>(null);
@@ -902,73 +930,73 @@ function Former({
         </div>
       </dl>
       <div className="mt-3 grid grid-cols-2 gap-2">
-        <OrderButton id="dig" which={which} note={canonCut} primary onClick={act("dig", onDig)}>
+        <OrderButton id="dig" which={which} note={canonCut} onManual={onManual} primary onClick={act("dig", onDig)}>
           Dig 2 m
         </OrderButton>
-        <OrderButton id="mill" which={which} note={canonCut} onClick={act("mill", onMill)}>
+        <OrderButton id="mill" which={which} note={canonCut} onManual={onManual} onClick={act("mill", onMill)}>
           Mill a batch
         </OrderButton>
-        <OrderButton id="dump" which={which} note={canonCut} onClick={act("dump", onDump)}>
+        <OrderButton id="dump" which={which} note={canonCut} onManual={onManual} onClick={act("dump", onDump)}>
           Return 1 cm of tailings
         </OrderButton>
-        <OrderButton id="lamp" which={which} note={canonCut} onClick={act("lamp", onLamp)}>
+        <OrderButton id="lamp" which={which} note={canonCut} onManual={onManual} onClick={act("lamp", onLamp)}>
           Raise a lamp
         </OrderButton>
-        <OrderButton id="cable" which={which} note={canonCut} onClick={act("cable", onCable)}>
+        <OrderButton id="cable" which={which} note={canonCut} onManual={onManual} onClick={act("cable", onCable)}>
           Wire this kilometer
         </OrderButton>
-        <OrderButton id="meter" which={which} note={canonCut} onClick={act("meter", onMeter)}>
+        <OrderButton id="meter" which={which} note={canonCut} onManual={onManual} onClick={act("meter", onMeter)}>
           Meter 28 kg into the cabin
         </OrderButton>
-        <OrderButton id="paint" which={which} note={canonCut} onClick={act("paint", onPaint)}>
+        <OrderButton id="paint" which={which} note={canonCut} onManual={onManual} onClick={act("paint", onPaint)}>
           Paint this kilometer
         </OrderButton>
-        <OrderButton id="mine" which={which} note={canonCut} onClick={act("mine", onMine)}>
+        <OrderButton id="mine" which={which} note={canonCut} onManual={onManual} onClick={act("mine", onMine)}>
           Mine 1 t ice
         </OrderButton>
-        <OrderButton id="compress" which={which} note={canonCut} onClick={act("compress", onCompress)}>
+        <OrderButton id="compress" which={which} note={canonCut} onManual={onManual} onClick={act("compress", onCompress)}>
           Bottle 44 kg CO2
         </OrderButton>
-        <OrderButton id="vent" which={which} note={canonCut} onClick={act("vent", onVent)}>
+        <OrderButton id="vent" which={which} note={canonCut} onManual={onManual} onClick={act("vent", onVent)}>
           Vent 1 kg cabin CO2
         </OrderButton>
-        <OrderButton id="split" which={which} note={canonCut} onClick={act("split", onSplit)}>
+        <OrderButton id="split" which={which} note={canonCut} onManual={onManual} onClick={act("split", onSplit)}>
           Electrolyze 36 kg
         </OrderButton>
-        <OrderButton id="sabatier" which={which} note={canonCut} onClick={act("sabatier", onSabatier)}>
+        <OrderButton id="sabatier" which={which} note={canonCut} onManual={onManual} onClick={act("sabatier", onSabatier)}>
           Sabatier batch
         </OrderButton>
-        <OrderButton id="burn" which={which} note={canonCut} onClick={act("burn", onBurn)}>
+        <OrderButton id="burn" which={which} note={canonCut} onManual={onManual} onClick={act("burn", onBurn)}>
           Burn 16 kg methane
         </OrderButton>
-        <OrderButton id="wash" which={which} note={canonCut} onClick={act("wash", onWash)}>
+        <OrderButton id="wash" which={which} note={canonCut} onManual={onManual} onClick={act("wash", onWash)}>
           Wash tanks
         </OrderButton>
-        <OrderButton id="roof" which={which} note={canonCut} onClick={act("roof", onRoof)}>
+        <OrderButton id="roof" which={which} note={canonCut} onManual={onManual} onClick={act("roof", onRoof)}>
           Roof this kilometer
         </OrderButton>
-        <OrderButton id="road" which={which} note={canonCut} onClick={act("road", onRoad)}>
+        <OrderButton id="road" which={which} note={canonCut} onManual={onManual} onClick={act("road", onRoad)}>
           Lay a road
         </OrderButton>
-        <OrderButton id="berm" which={which} note={canonCut} onClick={act("berm", onBerm)}>
+        <OrderButton id="berm" which={which} note={canonCut} onManual={onManual} onClick={act("berm", onBerm)}>
           Raise a berm
         </OrderButton>
-        <OrderButton id="collector" which={which} note={canonCut} onClick={act("collector", onCollector)}>
+        <OrderButton id="collector" which={which} note={canonCut} onManual={onManual} onClick={act("collector", onCollector)}>
           Raise a collector
         </OrderButton>
-        <OrderButton id="repair" which={which} note={canonCut} onClick={act("repair", onRepair)}>
+        <OrderButton id="repair" which={which} note={canonCut} onManual={onManual} onClick={act("repair", onRepair)}>
           Repair the array
         </OrderButton>
-        <OrderButton id="reactor" which={which} note={canonCut} onClick={act("reactor", onReactor)}>
+        <OrderButton id="reactor" which={which} note={canonCut} onManual={onManual} onClick={act("reactor", onReactor)}>
           Start the kilopower
         </OrderButton>
-        <OrderButton id="heat" which={which} note={canonCut} onClick={act("heat", onHeat)}>
+        <OrderButton id="heat" which={which} note={canonCut} onManual={onManual} onClick={act("heat", onHeat)}>
           Heat the vessel
         </OrderButton>
-        <OrderButton id="draw" which={which} note={canonCut} onClick={act("draw", onDraw)}>
+        <OrderButton id="draw" which={which} note={canonCut} onManual={onManual} onClick={act("draw", onDraw)}>
           Draw 1 kg from the column
         </OrderButton>
-        <OrderButton id="radiator" which={which} note={canonCut} onClick={act("radiator", onRadiator)}>
+        <OrderButton id="radiator" which={which} note={canonCut} onManual={onManual} onClick={act("radiator", onRadiator)}>
           Raise a radiator
         </OrderButton>
       </div>
