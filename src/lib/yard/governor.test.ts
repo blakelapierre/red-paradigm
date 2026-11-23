@@ -209,6 +209,30 @@ test("a full tank is not mined", () => {
   assert.equal(mined.yard.witnessStocks.iceKg, mined.yard.canonStocks.iceKg);
 });
 
+test("a stocked cabin is not split, and a hot yard is not split", () => {
+  const aims = DEFAULT_AIMS.map((aim) => ({ ...aim, on: aim.id === "fuel" }));
+  const fed = freshYard();
+  const enough = { ...fed.canonStocks, o2Kg: 40n, cabinO2Kg: 28n, waterKg: 100n, batteryKwh: 1_000 };
+  fed.canonStocks = enough;
+  fed.witnessStocks = enough;
+  const held = workList(fed, aims, cradleSite());
+  assert.equal(held.yard.canonStocks.o2Kg, 40n);
+  const short = freshYard();
+  const need = { ...short.canonStocks, o2Kg: 0n, cabinO2Kg: 28n, waterKg: 100n, batteryKwh: 1_000, toxinMilli: 0 };
+  short.canonStocks = need;
+  short.witnessStocks = need;
+  const split = workList(short, aims, cradleSite());
+  assert.equal(split.yard.canonStocks.o2Kg, 32n);
+  const hot = freshYard();
+  const heat = { ...need, heatKwh: 80 };
+  hot.canonStocks = heat;
+  hot.witnessStocks = heat;
+  const refused = workList(hot, aims, cradleSite());
+  assert.equal(refused.yard.canonStocks.o2Kg, 0n);
+  assert.equal(refused.yard.canonStocks.heatKwh, 80);
+});
+
+
 
 
 

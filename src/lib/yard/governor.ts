@@ -3,7 +3,9 @@ import { type Crust } from "../crust/crust.ts";
 import { commitBerm } from "./berm.ts";
 import { commitBeds, BED_CAP } from "./bed.ts";
 import { BIOMASS_WATER_KG } from "./biomass.ts";
-import { CREW_WATER_KG } from "./crew.ts";
+import { CREW_O2_KG, CREW_WATER_KG } from "./crew.ts";
+import { HEAT_LIMIT_KWH, SPLIT_HEAT_KWH } from "./radiator.ts";
+import { CABIN_O2_KG } from "./meter.ts";
 import { commitCollector } from "./collector.ts";
 import { commitCompress } from "./compress.ts";
 import { commitCondenser } from "./condenser.ts";
@@ -142,7 +144,11 @@ function runAim(yard: Yard, id: AimId, site: WorkSite, landed: string[]): Yard {
   }
   if (id === "fuel") {
     let next = takeStocks(yard, commitCompress(yard.canonStocks, yard.witnessStocks, yard.canon), landed);
-    next = takeStocks(next, commitElectrolysis(next.canonStocks, next.witnessStocks), landed);
+    const needs = oxygenShort(next.canonStocks) || oxygenShort(next.witnessStocks);
+    const cool = canSplit(next.canonStocks) && canSplit(next.witnessStocks);
+    if (needs && cool) {
+      next = takeStocks(next, commitElectrolysis(next.canonStocks, next.witnessStocks), landed);
+    }
     return takeStocks(next, commitSabatier(next.canonStocks, next.witnessStocks, next.canon), landed);
   }
   if (id === "column") return takeStocks(yard, commitCondenser(yard.canonStocks, yard.witnessStocks, yard.canon), landed);
@@ -214,6 +220,14 @@ function floorReady(crust: Crust, stocks: Stocks): boolean {
 function waterShort(stocks: Stocks): boolean {
   const need = CREW_WATER_KG + BigInt(Math.max(0, stocks.beds)) * BIOMASS_WATER_KG;
   return stocks.waterKg < need;
+}
+
+function oxygenShort(stocks: Stocks): boolean {
+  return stocks.o2Kg < CREW_O2_KG || stocks.cabinO2Kg < CABIN_O2_KG;
+}
+
+function canSplit(stocks: Stocks): boolean {
+  return stocks.heatKwh + SPLIT_HEAT_KWH <= HEAT_LIMIT_KWH;
 }
 
 /** Close sols, then one pass of the list after each close, if the yard is set to follow. Stops when the mark lands, or when a followed sol spends nothing. */
