@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { airKg, createWorld, step } from "../climate/model.ts";
+import { airKg, createWorld, step, stormTau } from "../climate/model.ts";
+import { STORM_DURATION, STORM_PEAK_TAU_MILLI, STORM_SOL } from "../climate/constants.ts";
 import { createCrust, setFlag } from "../crust/crust.ts";
 import { turnHash } from "../turn.ts";
 import { BED_CAP } from "./bed.ts";
-import { HELD_MARK, cradleHolding, holdGap, kilometerHolds, markHold } from "./hold.ts";
+import { HELD_MARK, cradleHolding, holdGap, kilometerHolds, markHold, markStorm } from "./hold.ts";
 import { CABIN_O2_KG } from "./meter.ts";
 import { closeSol, createStocks, stocksBytes } from "./power.ts";
 import { STALE_CO2_KG, commitVent } from "./vent.ts";
@@ -228,6 +229,49 @@ test("a roof that cannot be paid zeros the run", () => {
   assert.equal(fell.crust.overrides[0].roof, 0);
   assert.equal(fell.stocks.batteryKwh, 0);
   assert.equal(fell.stocks.heldSols, 0);
+});
+
+test("a run that never broke is marked when the storm ends, and a later miss does not clear it", () => {
+  const storm = { startSol: STORM_SOL, duration: STORM_DURATION, peakTauMilli: STORM_PEAK_TAU_MILLI };
+  const during = { ...createWorld(), sol: STORM_SOL + 18, storm };
+  const clear = { ...createWorld(), sol: STORM_SOL + STORM_DURATION, storm };
+  assert.ok(stormTau(during.sol, during.storm) > 0.05);
+  assert.equal(stormTau(clear.sol, clear.storm), 0);
+  const { crust, stocks } = ready();
+  const seen = { ...stocks, stormSeen: 1, stormBroke: 0, stormHeld: 0 };
+  const marked = markStorm(during, clear, crust, seen);
+  assert.equal(marked.stormHeld, 1);
+  assert.equal(marked.stormBroke, 0);
+  const missed = markStorm(during, during, createCrust(), createStocks());
+  assert.equal(missed.stormBroke, 1);
+  assert.equal(missed.stormSeen, 1);
+  assert.equal(missed.stormHeld, 0);
+  const denied = markStorm(during, clear, crust, { ...seen, stormBroke: 1 });
+  assert.equal(denied.stormHeld, 0);
+  const later = markStorm(clear, { ...clear, sol: clear.sol + 1 }, createCrust(), {
+    ...createStocks(),
+    stormHeld: 1,
+    stormSeen: 1,
+  });
+  assert.equal(later.stormHeld, 1);
+  assert.notEqual(
+    Buffer.from(stocksBytes(createStocks())).toString("hex"),
+    Buffer.from(stocksBytes({ ...createStocks(), stormHeld: 1 })).toString("hex"),
+  );
+  assert.equal(new DataView(stocksBytes(marked).buffer).getUint32(160), 1);
+});
+
+test("closing into a stripping sol marks that the storm was seen", () => {
+  const storm = { startSol: STORM_SOL, duration: STORM_DURATION, peakTauMilli: STORM_PEAK_TAU_MILLI };
+  const filed = { ...createWorld(), sol: STORM_SOL, storm };
+  assert.ok(stormTau(filed.sol, filed.storm) <= 0.05);
+  const closed = closeSol(filed, createStocks(), createCrust());
+  assert.equal(closed.world.sol, STORM_SOL + 1);
+  assert.equal(closed.stocks.stormSeen, 1);
+  assert.equal(closed.stocks.stormBroke, 1);
+  assert.equal(closed.stocks.stormHeld, 0);
+  const other = closeSol(filed, createStocks(), createCrust());
+  assert.equal(turnHash(closed.world, closed.crust, closed.stocks), turnHash(other.world, other.crust, other.stocks));
 });
 
 

@@ -1,4 +1,5 @@
 import { type Crust } from "../crust/crust.ts";
+import { stormTau, type World } from "../climate/model.ts";
 import { BIOMASS_WATER_KG } from "./biomass.ts";
 import { BED_CAP } from "./bed.ts";
 import { CREW_O2_KG, CREW_WATER_KG } from "./crew.ts";
@@ -59,4 +60,17 @@ export function markHold(crust: Crust, stocks: Stocks): Stocks {
 
 export function kilometerHolds(stocks: Stocks): boolean {
   return stocks.heldSols >= HELD_MARK;
+}
+
+/** The storm bit is not cleared by a later miss. It is set only if the run never broke while dust was stripping. */
+export function markStorm(before: World, after: World, crust: Crust, stocks: Stocks): Stocks {
+  const was = stormTau(before.sol, before.storm) > 0.05;
+  const now = stormTau(after.sol, after.storm) > 0.05;
+  let stormBroke = stocks.stormBroke;
+  if (now && !cradleHolding(crust, stocks)) stormBroke = 1;
+  let stormHeld = stocks.stormHeld;
+  if (was && !now && stormBroke === 0 && stocks.stormSeen === 1 && cradleHolding(crust, stocks)) stormHeld = 1;
+  const stormSeen = stocks.stormSeen || was || now ? 1 : 0;
+  if (stormBroke === stocks.stormBroke && stormHeld === stocks.stormHeld && stormSeen === stocks.stormSeen) return stocks;
+  return { ...stocks, stormBroke, stormHeld, stormSeen };
 }
