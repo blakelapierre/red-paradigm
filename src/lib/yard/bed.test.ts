@@ -3,10 +3,11 @@ import { test } from "node:test";
 import { airKg, createWorld } from "../climate/model.ts";
 import { createCrust, setFlag } from "../crust/crust.ts";
 import { turnHash } from "../turn.ts";
-import { BED_CAP, BED_FINES_KG, commitPlant } from "./bed.ts";
+import { BED_CAP, BED_FINES_KG, RATION_BED_FINES_KG, commitPlant } from "./bed.ts";
 import { grow } from "./biomass.ts";
 import { RATION_G } from "./food.ts";
 import { LAMP_G } from "./lamp.ts";
+import { MILL_FINES_KG } from "./mill.ts";
 import { createStocks, stocksBytes } from "./power.ts";
 
 test("the yard starts with one bed, and the count is in the stocks hash", () => {
@@ -76,3 +77,21 @@ test("the twenty-sixth bed is refused", () => {
   assert.equal(uneven.a.beds, BED_CAP - 1);
   assert.equal(uneven.b.beds, BED_CAP);
 });
+
+test("one mill batch pays the added beds and leaves a bed the cap will not spend", () => {
+  assert.equal(RATION_BED_FINES_KG, 4_800_000n);
+  assert.equal(MILL_FINES_KG - RATION_BED_FINES_KG, BED_FINES_KG);
+  const roof = setFlag(createCrust(), 1, 2, "roof", 1);
+  let stocks = { ...createStocks(), finesKg: MILL_FINES_KG };
+  for (let i = 0; i < BED_CAP; i++) {
+    const planted = commitPlant(roof, roof, stocks, stocks);
+    if (!planted.accepted) break;
+    stocks = planted.a;
+  }
+  assert.equal(stocks.beds, BED_CAP);
+  assert.equal(stocks.finesKg, BED_FINES_KG);
+  const refused = commitPlant(roof, roof, stocks, stocks);
+  assert.equal(refused.accepted, false);
+  assert.equal(refused.a.finesKg, BED_FINES_KG);
+});
+

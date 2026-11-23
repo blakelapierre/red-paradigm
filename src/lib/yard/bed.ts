@@ -7,6 +7,8 @@ import { type Stocks } from "./power.ts";
 export const BED_FINES_KG = 200_000n;
 /** 25 lit beds × 20 g. One person's floor, not a second crew. */
 export const BED_CAP = RATION_G / LAMP_G;
+/** The landed bed is already there. The rest of the floor is this much fines. */
+export const RATION_BED_FINES_KG = BED_FINES_KG * BigInt(BED_CAP - 1);
 
 export function commitPlant(
   a: Crust,
