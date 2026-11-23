@@ -62,7 +62,7 @@ import { commitMill } from "@/lib/yard/mill";
 import { commitDump } from "@/lib/yard/dump";
 import { LAMP_G, commitLamp } from "@/lib/yard/lamp";
 import { BED_CAP, commitPlant } from "@/lib/yard/bed";
-import { HELD_MARK } from "@/lib/yard/hold";
+import { HELD_MARK, kilometerHolds } from "@/lib/yard/hold";
 import { commitCable } from "@/lib/yard/cable";
 import { commitMeter } from "@/lib/yard/meter";
 import { commitPaint } from "@/lib/yard/paint";
@@ -392,6 +392,13 @@ export function Council() {
             {pair.log.length > 0 ? (
               <p className={`mt-1 text-sm ${pair.log[pair.log.length - 1] === "The list spent nothing." ? "text-oxide" : "text-frost"}`}>
                 Yard: {pair.log[pair.log.length - 1]}
+              </p>
+            ) : null}
+            {turnA === turnB && pair.canonStocks.heldSols > 0 ? (
+              <p className={`mt-1 text-sm ${kilometerHolds(pair.canonStocks) ? "text-frost" : "text-muted"}`}>
+                {kilometerHolds(pair.canonStocks)
+                  ? `This kilometer has held for ${pair.canonStocks.heldSols} sols. The climate cell did not move.`
+                  : `Held ${pair.canonStocks.heldSols} of ${HELD_MARK} sols.`}
               </p>
             ) : null}
             <button type="button" className="mt-2 min-h-11 text-left text-xs text-frost" onClick={() => setManual("Order of work")}>
