@@ -10,6 +10,7 @@ const ORDERS = [
   "Mill a batch",
   "Return 1 cm of tailings",
   "Raise a lamp",
+  "Plant a bed",
   "Wire this kilometer",
   "Meter 28 kg into the cabin",
   "Paint this kilometer",
