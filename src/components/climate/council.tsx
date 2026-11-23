@@ -45,6 +45,7 @@ import { commitSabatier } from "@/lib/yard/sabatier";
 import { commitElectrolysis } from "@/lib/yard/electrolysis";
 import { commitMine } from "@/lib/yard/ice";
 import { commitMill } from "@/lib/yard/mill";
+import { commitDump } from "@/lib/yard/dump";
 import { commitPaint } from "@/lib/yard/paint";
 import { commitRelease } from "@/lib/yard/release";
 import {
@@ -411,6 +412,13 @@ export function Council() {
                 witnessStocks: milled.bStocks,
               }));
             }}
+            onDump={() => {
+              const at = cellOf(view.lat, view.lon);
+              const dumped = commitDump(pair.canonCrust, pair.witnessCrust, at.ix, at.iy);
+              setCanonCut({ accepted: dumped.accepted, reason: dumped.reason });
+              setWitnessCut({ accepted: dumped.accepted, reason: dumped.reason });
+              setPair((p) => ({ ...p, canonCrust: dumped.a, witnessCrust: dumped.b }));
+            }}
             onPaint={() => {
               const at = cellOf(view.lat, view.lon);
               const painted = commitPaint(pair.canonCrust, pair.witnessCrust, pair.canonStocks, pair.witnessStocks, at.ix, at.iy);
@@ -643,6 +651,7 @@ function Former({
   witnessCut,
   onDig,
   onMill,
+  onDump,
   onPaint,
   onMine,
   onSplit,
@@ -671,6 +680,7 @@ function Former({
   witnessCut: CutNote | null;
   onDig: () => void;
   onMill: () => void;
+  onDump: () => void;
   onPaint: () => void;
   onMine: () => void;
   onSplit: () => void;
@@ -732,6 +742,9 @@ function Former({
           Mill a batch
         </button>
       </div>
+      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onDump}>
+        Return 1 cm of tailings
+      </button>
       <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onPaint}>
         Paint this kilometer
       </button>
@@ -784,7 +797,7 @@ function Former({
         Each sol takes 1 kg of oxygen and 3 kg of water. If either is short, the sol is owed and neither is spent. A roof costs 10,000 kWh that same sol. If the battery cannot pay, every roof comes down. Under a standing roof, with clean water and no debt, one gram of biomass grows and one kilogram of water is spent. The air mass does not move. A collector costs 30,000 kg of fines. On a stripping sol it returns a tenth of the particle mass that left this array's climate cell. Five grams per square meter per optical depth is an order of magnitude. A clear sol returns nothing. A stripping sol also takes 10/1000 off the array after that sol's power is banked. Repair spends 10,000 kg of fines to put 100/1000 back. Methane in the open loses 1 percent a sol, and at least 1 kg when the tank is smaller than 100 kg. A standing roof holds it. Heating that vessel costs 10,000 kWh per kelvin, up to 40 K above the yard. The climate cell does not move. Drawing water takes 1 kg and 50 kWh from a column of about 10,000 kg over this kilometer. At 10,000 kg the order refuses. The air mass does not move. About 40 kWh of each 200 kWh split does not stay in the hydrogen. Past 80 kWh the cell waits. The open yard sheds 40 kWh a sol. A radiator costs 20,000 kg of fines and sheds 200.
       </p>
       <p className="mt-2 text-xs text-muted">
-        One kilometer, two meters down, 3,000,000,000 kg at 1,500 kg/m³. The cut costs {formatKwh(CUT_KWH)}. It will not cut a kilometer that has a roof. A mill batch is 100,000,000 kg of spoil and 1,000,000 kWh. Five percent is fines. The other ninety-five percent stays as tailings. Paint is 50,000 kg of fines on this kilometer, albedo 0.10. This cell's albedo stays {(climateAlbedoMilli / 1000).toFixed(3)}. The coat is {paintOf(canon, at.ix, at.iy) > 0 ? "on" : "not on"} this kilometer. Floor pressure moves by {delta.toFixed(2)} Pa.
+        One kilometer, two meters down, 3,000,000,000 kg at 1,500 kg/m³. The cut costs {formatKwh(CUT_KWH)}. It will not cut a kilometer that has a roof. A mill batch is 100,000,000 kg of spoil and 1,000,000 kWh. Five percent is fines. The other ninety-five percent stays as tailings. One centimeter of that fill is 15,000,000 kg back in the hole, and it does not free a second cut. Paint is 50,000 kg of fines on this kilometer, albedo 0.10. This cell's albedo stays {(climateAlbedoMilli / 1000).toFixed(3)}. The coat is {paintOf(canon, at.ix, at.iy) > 0 ? "on" : "not on"} this kilometer. Floor pressure moves by {delta.toFixed(2)} Pa.
       </p>
       <p className={`mt-2 text-xs ${canonCut?.accepted ? "text-frost" : "text-muted"}`}>
         Order: {canonCut ? canonCut.reason : "no cut yet"}

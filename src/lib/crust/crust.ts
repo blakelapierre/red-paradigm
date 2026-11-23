@@ -13,6 +13,8 @@ export const DIG_DZ_CM = -200;
 
 const M3_PER_CM = (BigInt(CELL_M) * BigInt(CELL_M)) / 100n;
 export const CUT_KG = M3_PER_CM * BigInt(-DIG_DZ_CM) * BigInt(BULK_KG_PER_M3);
+/** One centimeter of loose fill on one kilometer. */
+export const KG_PER_CM = M3_PER_CM * BigInt(BULK_KG_PER_M3);
 /** The yard at campaign start holds one cut and not two. */
 export const YARD_KG = CUT_KG;
 
@@ -235,6 +237,16 @@ export function applyDig(crust: Crust, op: DigOp): DigResult {
     accepted: true,
     reason: "cut accepted",
   };
+}
+
+export function fillOneCm(crust: Crust, ix: number, iy: number): { crust: Crust; accepted: boolean; reason: string } {
+  const row = crust.overrides.find((item) => item.ix === ix && item.iy === iy);
+  if (!row || row.dzCm >= 0) return { crust, accepted: false, reason: "there is no hole on that kilometer" };
+  if (row.dzCm + 1 > 0) return { crust, accepted: false, reason: "that would stand above the seed" };
+  const overrides = crust.overrides.map((item) =>
+    item.ix === ix && item.iy === iy ? { ...item, dzCm: item.dzCm + 1 } : item,
+  );
+  return { crust: { ...crust, overrides }, accepted: true, reason: "filled 1 cm" };
 }
 
 export function corruptHash(hex: string): string {
