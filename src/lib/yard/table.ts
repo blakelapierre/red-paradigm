@@ -159,6 +159,27 @@ export function tableHash(table: Table): string {
   return toHex(sha256(new TextEncoder().encode(lines)));
 }
 
+export type SealMsg = { type: "seal"; seat: SeatId; aims: Aim[]; sol: number };
+
+export type TableMsg = SealMsg | { type: "table"; table: Table; hash: string };
+
+export type TableState = { table: Table; split: boolean; waiting: boolean };
+
+/** Record a seal or take a table whose hash matches. Does not close by itself. */
+export function reduceTable(state: TableState, msg: TableMsg): TableState {
+  if (msg.type === "table") {
+    if (msg.hash !== tableHash(msg.table)) return { ...state, split: true };
+    return { table: msg.table, split: false, waiting: !bothSealed(msg.table) };
+  }
+  if (msg.sol !== state.table.climate.sol) return state;
+  const table = sealSeat(state.table, msg.seat, msg.aims);
+  return { table, split: false, waiting: !bothSealed(table) };
+}
+
+export function replaySeals(seals: readonly SealMsg[]): TableState {
+  return seals.reduce<TableState>(reduceTable, { table: createTable(), split: false, waiting: false });
+}
+
 export type FaceBit = "held" | "dark";
 
 export type PublicFace = {

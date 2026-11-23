@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { bothSealed, closeIfSealed, closeTable, createTable, publicFace, runSeat, sealSeat, seatFromSearch, seatSite, tableHash, WORKS_FINES_KG } from "./table.ts";
+import { bothSealed, closeIfSealed, closeTable, createTable, publicFace, reduceTable, replaySeals, runSeat, sealSeat, seatFromSearch, seatSite, tableHash, WORKS_FINES_KG } from "./table.ts";
 import { DEFAULT_AIMS } from "./governor.ts";
 import { CUT_KWH, closeSol, createStocks, stocksBytes } from "./power.ts";
 import { createWorld } from "../climate/model.ts";
@@ -155,4 +155,25 @@ test("the cradle is the default seat, and works is a query", () => {
   assert.equal(seatFromSearch("?seat=cradle"), "cradle");
   assert.equal(seatFromSearch("?seat=works"), "works");
   assert.equal(seatFromSearch("table=1&seat=works"), "works");
+});
+
+test("a seal waits, and a table with the wrong hash is refused", () => {
+  const aims = DEFAULT_AIMS.map((aim) => ({ ...aim }));
+  const start = { table: createTable(), split: false, waiting: false };
+  const sealed = reduceTable(start, { type: "seal", seat: "cradle", aims, sol: 0 });
+  assert.equal(sealed.waiting, true);
+  assert.equal(sealed.split, false);
+  assert.equal(sealed.table.climate.sol, 0);
+  assert.equal(sealed.table.cradle.sealedSol, 0);
+  const lied = reduceTable(sealed, { type: "table", table: createTable(), hash: "nope" });
+  assert.equal(lied.split, true);
+  assert.equal(lied.table.cradle.sealedSol, 0);
+  const honest = createTable();
+  const took = reduceTable(lied, { type: "table", table: honest, hash: tableHash(honest) });
+  assert.equal(took.split, false);
+  assert.equal(took.table.cradle.sealedSol, null);
+  const replayed = replaySeals([{ type: "seal", seat: "works", aims, sol: 0 }]);
+  assert.equal(replayed.waiting, true);
+  assert.equal(replayed.table.works.sealedSol, 0);
+  assert.equal(replayed.table.climate.sol, 0);
 });
