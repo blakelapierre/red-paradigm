@@ -192,5 +192,27 @@ test("a crew debt zeros the run", () => {
   assert.equal(owed.stocks.waterKg, 28n);
 });
 
+test("a roof that cannot be paid zeros the run", () => {
+  const roof = setFlag(createCrust(), 1, 2, "roof", 1);
+  const fell = closeSol(
+    createWorld(),
+    {
+      ...createStocks(),
+      capKwh: 0,
+      batteryKwh: 0,
+      heldSols: 5,
+      cabinO2Kg: CABIN_O2_KG + 1n,
+      biomassG: 500,
+      o2Kg: 1n,
+      waterKg: 4n,
+    },
+    roof,
+  );
+  assert.equal(fell.crust.overrides[0].roof, 0);
+  assert.equal(fell.stocks.batteryKwh, 0);
+  assert.equal(fell.stocks.heldSols, 0);
+});
+
+
 
 
