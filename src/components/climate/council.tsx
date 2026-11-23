@@ -60,7 +60,9 @@ import { commitCompress } from "@/lib/yard/compress";
 import { commitVent } from "@/lib/yard/vent";
 import { commitMill } from "@/lib/yard/mill";
 import { commitDump } from "@/lib/yard/dump";
-import { commitLamp } from "@/lib/yard/lamp";
+import { LAMP_G, commitLamp } from "@/lib/yard/lamp";
+import { BED_CAP, commitPlant } from "@/lib/yard/bed";
+import { HELD_MARK } from "@/lib/yard/hold";
 import { commitCable } from "@/lib/yard/cable";
 import { commitMeter } from "@/lib/yard/meter";
 import { commitPaint } from "@/lib/yard/paint";
@@ -566,6 +568,12 @@ export function Council() {
               setWitnessCut({ accepted: lit.accepted, reason: lit.reason });
               setPair((p) => ({ ...p, canonStocks: lit.a, witnessStocks: lit.b }));
             }}
+            onPlant={() => {
+              const planted = commitPlant(pair.canonCrust, pair.witnessCrust, pair.canonStocks, pair.witnessStocks);
+              setCanonCut({ accepted: planted.accepted, reason: planted.reason });
+              setWitnessCut({ accepted: planted.accepted, reason: planted.reason });
+              setPair((p) => ({ ...p, canonStocks: planted.a, witnessStocks: planted.b }));
+            }}
             onCable={() => {
               const at = cellOf(view.lat, view.lon);
               const laid = commitCable(pair.canonStocks, pair.witnessStocks, at.ix, at.iy);
@@ -872,6 +880,7 @@ function Former({
   onMill,
   onDump,
   onLamp,
+  onPlant,
   onCable,
   onMeter,
   onPaint,
@@ -907,6 +916,7 @@ function Former({
   onMill: () => void;
   onDump: () => void;
   onLamp: () => void;
+  onPlant: () => void;
   onCable: () => void;
   onMeter: () => void;
   onPaint: () => void;
@@ -1018,6 +1028,18 @@ function Former({
           <dd className="font-mono text-xs">{stocks.biomassG} g · lamp {stocks.lamp ? "on" : "off"}</dd>
         </div>
         <div>
+          <dt className="text-xs text-muted">Beds</dt>
+          <dd className="font-mono text-xs">
+            {stocks.beds}/{BED_CAP} · {stocks.beds * (stocks.lamp ? LAMP_G : 1)} g
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted">Hold</dt>
+          <dd className="font-mono text-xs">
+            {stocks.heldSols}/{HELD_MARK}
+          </dd>
+        </div>
+        <div>
           <dt className="text-xs text-muted">Line</dt>
           <dd className="font-mono text-xs">{stocks.cableOn ? `${stocks.cableIx}, ${stocks.cableIy}` : "cradle only"}</dd>
         </div>
@@ -1046,6 +1068,9 @@ function Former({
         </OrderButton>
         <OrderButton id="lamp" which={which} note={canonCut} onManual={onManual} onClick={act("lamp", onLamp)}>
           Raise a lamp
+        </OrderButton>
+        <OrderButton id="plant" which={which} note={canonCut} onManual={onManual} onClick={act("plant", onPlant)}>
+          Plant a bed
         </OrderButton>
         <OrderButton id="cable" which={which} note={canonCut} onManual={onManual} onClick={act("cable", onCable)}>
           Wire this kilometer
