@@ -195,7 +195,7 @@ function runAim(yard: Yard, id: AimId, site: WorkSite, landed: string[]): Yard {
   return yard;
 }
 
-/** One pass. An aim that is off is skipped. A refusal spends nothing and does not stop the next aim. Once both floors are in, the list does not cut or mill. */
+/** One pass. An aim that is off is skipped. A refusal spends nothing and does not stop the next aim. Once both floors are in, the list does not cut, mill, or loft. */
 export function workList(
   yard: Yard,
   aims: readonly Aim[],
@@ -207,7 +207,7 @@ export function workList(
     floorReady(yard.canonCrust, yard.canonStocks) && floorReady(yard.witnessCrust, yard.witnessStocks);
   const holding = cradleHolding(yard.canonCrust, yard.canonStocks) && cradleHolding(yard.witnessCrust, yard.witnessStocks);
   for (const aim of passAims(aims, holding)) {
-    if (floored && (aim.id === "cut" || aim.id === "mill")) continue;
+    if (floored && (aim.id === "cut" || aim.id === "mill" || aim.id === "veil")) continue;
     next = runAim(next, aim.id, site, landed);
   }
   return { yard: next, landed };

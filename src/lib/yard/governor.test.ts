@@ -4,7 +4,9 @@ import { cellLat, cellLon, latIndexOf, lonIndexOf } from "../climate/constants.t
 import { createWorld, siteIndex, surveyPressure } from "../climate/model.ts";
 import { cellOf, createCrust, setFlag } from "../crust/crust.ts";
 import { turnHash } from "../turn.ts";
-import { BED_FINES_KG } from "./bed.ts";
+import { BED_CAP, BED_FINES_KG } from "./bed.ts";
+import { MILL_FINES_KG } from "./mill.ts";
+import { LOFT_KWH } from "./release.ts";
 import { CRADLE_CELL } from "./cable.ts";
 import { DEFAULT_AIMS, bankSols, moveAim, toggleAim, workList, type WorkSite, type Yard } from "./governor.ts";
 import { CUT_KWH, createStocks } from "./power.ts";
@@ -245,6 +247,25 @@ test("an open hold pays the roof before a cut", () => {
   assert.equal(worked.yard.canonCrust.spoilKg, 0n);
   assert.equal(worked.yard.canonCrust.overrides.some((row) => row.roof === 1), true);
   assert.equal(worked.yard.witnessCrust.spoilKg, 0n);
+});
+
+test("a finished floor does not loft", () => {
+  const site = cradleSite();
+  const roof = setFlag(createCrust(), site.ix, site.iy, "roof", 1);
+  const yard = freshYard();
+  yard.canonCrust = roof;
+  yard.witnessCrust = roof;
+  const rich = { ...createStocks(), lamp: 1, beds: BED_CAP, finesKg: MILL_FINES_KG, batteryKwh: LOFT_KWH };
+  yard.canonStocks = rich;
+  yard.witnessStocks = { ...rich };
+  const aims = DEFAULT_AIMS.map((aim) => ({ ...aim, on: aim.id === "veil" || aim.id === "cut" || aim.id === "mill" }));
+  const worked = workList(yard, aims, site);
+  assert.equal(worked.landed.length, 0);
+  assert.equal(worked.yard.canon.tauAerMilli[site.climateIndex], 0);
+  assert.equal(worked.yard.witness.tauAerMilli[site.climateIndex], 0);
+  assert.equal(worked.yard.canonStocks.finesKg, MILL_FINES_KG);
+  assert.equal(worked.yard.canonStocks.batteryKwh, LOFT_KWH);
+  assert.equal(worked.yard.canonCrust.spoilKg, 0n);
 });
 
 
