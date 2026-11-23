@@ -331,7 +331,7 @@ export function Council() {
             <button
               type="button"
               className="inline-flex min-h-11 items-center gap-2 rounded-sm border border-line px-3 text-sm text-fg"
-              onClick={() => setManual((open) => (open === null ? "Order of work" : null))}
+              onClick={() => setManual((open) => (open === null ? "What the list is doing" : null))}
             >
               <BookOpen className="size-4" aria-hidden />
               {manual === null ? "Field manual" : "Show the map"}
@@ -411,7 +411,7 @@ export function Council() {
             {turnA === turnB && holdGapLine(pair.canonCrust, pair.canonStocks) ? (
               <p className="mt-1 text-sm text-muted">{holdGapLine(pair.canonCrust, pair.canonStocks)}</p>
             ) : null}
-            <button type="button" className="mt-2 min-h-11 text-left text-xs text-frost" onClick={() => setManual("Order of work")}>
+            <button type="button" className="mt-2 min-h-11 text-left text-xs text-frost" onClick={() => setManual("What the list is doing")}>
               Open the field manual
             </button>
           </div>
