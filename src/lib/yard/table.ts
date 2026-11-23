@@ -1,6 +1,8 @@
 import { cellLat, cellLon, latIndexOf, lonIndexOf } from "../climate/constants.ts";
+import { sha256, toHex } from "../climate/hash.ts";
 import { createWorld, siteIndex, step, surveyPressure, type World } from "../climate/model.ts";
 import { cellOf, createCrust, type Crust } from "../crust/crust.ts";
+import { turnHash } from "../turn.ts";
 import { DEFAULT_AIMS, workList, type Aim, type WorkSite, type Yard } from "./governor.ts";
 import { createStocks, liveSol, type Stocks } from "./power.ts";
 
@@ -130,4 +132,15 @@ export function runSeat(table: Table, seat: SeatId, site: WorkSite = seatSite(ta
       [other]: table[other],
     },
   };
+}
+
+/** Climate plus both yards, canon and witness. A dropped storm splits. */
+export function tableHash(table: Table): string {
+  const lines = [
+    turnHash(table.climate, table.cradle.crust, table.cradle.stocks),
+    turnHash(table.witness, table.cradle.witnessCrust, table.cradle.witnessStocks),
+    turnHash(table.climate, table.works.crust, table.works.stocks),
+    turnHash(table.witness, table.works.witnessCrust, table.works.witnessStocks),
+  ].join("\n");
+  return toHex(sha256(new TextEncoder().encode(lines)));
 }

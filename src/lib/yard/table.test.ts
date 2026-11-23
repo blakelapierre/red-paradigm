@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { bothSealed, closeIfSealed, closeTable, createTable, runSeat, sealSeat, seatSite } from "./table.ts";
+import { bothSealed, closeIfSealed, closeTable, createTable, runSeat, sealSeat, seatSite, tableHash } from "./table.ts";
 import { DEFAULT_AIMS } from "./governor.ts";
 import { CUT_KWH, closeSol, createStocks, stocksBytes } from "./power.ts";
 import { createCrust } from "../crust/crust.ts";
@@ -62,4 +62,17 @@ test("a list cannot spend the other yard", () => {
   assert.equal(ran.table.works.stocks.batteryKwh, 0);
   assert.equal(Buffer.from(stocksBytes(ran.table.works.stocks)).toString("hex"), before);
   assert.equal(ran.table.works.witnessStocks.batteryKwh, 0);
+});
+
+test("the table hash covers both yards, and a dropped storm splits", () => {
+  const a = createTable();
+  const b = createTable();
+  assert.equal(tableHash(a), tableHash(b));
+  const dropped = {
+    ...a,
+    witness: { ...a.witness, storm: { startSol: 12, duration: 40, peakTauMilli: 5000 } },
+  };
+  assert.notEqual(tableHash(dropped), tableHash(a));
+  const richer = { ...a, works: { ...a.works, stocks: { ...a.works.stocks, finesKg: 1n } } };
+  assert.notEqual(tableHash(richer), tableHash(a));
 });
