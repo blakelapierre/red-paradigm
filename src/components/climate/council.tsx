@@ -585,7 +585,9 @@ export function Council() {
                   {(seat === "cradle" ? publicFace(tableState.table).works : publicFace(tableState.table).cradle) === "held"
                     ? "held"
                     : "dark"}
-                  . {tableState.waiting ? "Waiting for the other yard." : "Both yards have sealed this sol."} Leave the table and this
+                  . {tableState.waiting ? "Waiting for the other yard." : "Both yards have sealed this sol."}
+                  {publicFace(tableState.table).cradleThrough ? " The Low Cradle held through the storm." : ""}
+                  {publicFace(tableState.table).worksThrough ? " The Works held through the storm." : ""} Leave the table and this
                   board runs alone.
                 </p>
               ) : null}

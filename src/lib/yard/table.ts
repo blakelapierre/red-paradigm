@@ -171,15 +171,19 @@ export type TableMsg = SealMsg | { type: "table"; table: Table; hash: string };
 
 export type TableState = { table: Table; split: boolean; waiting: boolean };
 
-/** Record a seal or take a table whose hash matches. Does not close by itself. */
+/** Record a seal. When both yards have sealed the sol, step the climate once and run each list on its own yard. */
 export function reduceTable(state: TableState, msg: TableMsg): TableState {
   if (msg.type === "table") {
     if (msg.hash !== tableHash(msg.table)) return { ...state, split: true };
     return { table: msg.table, split: false, waiting: !bothSealed(msg.table) };
   }
   if (msg.sol !== state.table.climate.sol) return state;
-  const table = sealSeat(state.table, msg.seat, msg.aims);
-  return { table, split: false, waiting: !bothSealed(table) };
+  const sealed = sealSeat(state.table, msg.seat, msg.aims);
+  if (!bothSealed(sealed)) return { table: sealed, split: false, waiting: true };
+  const closed = closeTable(sealed);
+  const cradle = runSeat(closed, "cradle");
+  const works = runSeat(cradle.table, "works");
+  return { table: works.table, split: false, waiting: false };
 }
 
 export function replaySeals(seals: readonly SealMsg[]): TableState {
@@ -194,6 +198,8 @@ export type PublicFace = {
   storming: boolean;
   cradle: FaceBit;
   works: FaceBit;
+  cradleThrough: boolean;
+  worksThrough: boolean;
 };
 
 /** Held or dark. Not the warehouse. */
@@ -209,5 +215,7 @@ export function publicFace(table: Table): PublicFace {
     storming: stormTau(table.climate.sol, table.climate.storm) > 0.05,
     cradle: faceBit(table.cradle.crust, table.cradle.stocks),
     works: faceBit(table.works.crust, table.works.stocks),
+    cradleThrough: table.cradle.stocks.stormHeld === 1,
+    worksThrough: table.works.stocks.stormHeld === 1,
   };
 }

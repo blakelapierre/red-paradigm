@@ -178,10 +178,42 @@ test("a seal waits, and a table with the wrong hash is refused", () => {
   assert.equal(replayed.table.climate.sol, 0);
 });
 
+test("both seals close both yards one sol, in either order", () => {
+  const aims = DEFAULT_AIMS.map((aim) => ({ ...aim, on: false }));
+  const start = { table: createTable(), split: false, waiting: false };
+  const one = reduceTable(start, { type: "seal", seat: "cradle", aims, sol: 0 });
+  assert.equal(one.table.climate.sol, 0);
+  const two = reduceTable(one, { type: "seal", seat: "works", aims, sol: 0 });
+  assert.equal(two.waiting, false);
+  assert.equal(two.split, false);
+  assert.equal(two.table.climate.sol, 1);
+  assert.equal(two.table.witness.sol, 1);
+  assert.ok(two.table.cradle.stocks.batteryKwh > 0);
+  assert.ok(two.table.works.stocks.batteryKwh > 0);
+  const flipped = replaySeals([
+    { type: "seal", seat: "works", aims, sol: 0 },
+    { type: "seal", seat: "cradle", aims, sol: 0 },
+  ]);
+  assert.equal(flipped.table.climate.sol, 1);
+  assert.equal(tableHash(flipped.table), tableHash(two.table));
+});
+
 test("the table is opt-in, so one window is not waiting", () => {
   assert.equal(tableWanted(""), false);
   assert.equal(tableWanted("?seat=works"), false);
   assert.equal(tableWanted("?table=0"), false);
   assert.equal(tableWanted("?table=1"), true);
   assert.equal(tableWanted("?table=1&seat=works"), true);
+});
+
+test("held through the storm is a public bit, not a stock list", () => {
+  const table = createTable();
+  table.cradle.stocks = { ...table.cradle.stocks, stormHeld: 1, stormSeen: 1, finesKg: 123n };
+  const face = publicFace(table);
+  assert.equal(face.cradle, "held");
+  assert.equal(face.cradleThrough, true);
+  assert.equal(face.works, "dark");
+  assert.equal(face.worksThrough, false);
+  assert.equal(JSON.stringify(face).includes("123"), false);
+  assert.equal(JSON.stringify(face).includes("fines"), false);
 });
