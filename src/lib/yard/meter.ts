@@ -6,6 +6,13 @@ export const CABIN_O2_KG = 28n;
 export const METER_KWH = 10;
 /** 28 kg * 260 J/kg/K * 293 K / 100 m³. About 21 kPa. Integer arithmetic. */
 export const CABIN_O2_PA = Number((CABIN_O2_KG * 260n * 293n) / BigInt(CABIN_M3));
+/** A seal, as an order of magnitude. One kilogram a sol leaves the cabin. It is not bottled. */
+export const CABIN_LEAK_KG = 1n;
+
+export function leakCabin(stocks: Stocks): Stocks {
+  if (stocks.cabinO2Kg < CABIN_LEAK_KG) return stocks;
+  return { ...stocks, cabinO2Kg: stocks.cabinO2Kg - CABIN_LEAK_KG };
+}
 
 export function commitMeter(a: Stocks, b: Stocks): { a: Stocks; b: Stocks; accepted: boolean; reason: string } {
   const same = { a, b, accepted: false };

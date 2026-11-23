@@ -11,6 +11,7 @@ import { eat } from "./food.ts";
 import { abrade, scaleArray } from "./health.ts";
 import { KILOPOWER_KWH } from "./kilopower.ts";
 import { payLamp } from "./lamp.ts";
+import { leakCabin } from "./meter.ts";
 import { keepRoof } from "./upkeep.ts";
 import { shedHeat } from "./radiator.ts";
 
@@ -165,7 +166,8 @@ export function closeSol(
   const aired = ventOxygen(kept.crust, light);
   const lamps = payLamp(aired);
   const fed = eat(lamps.stocks);
-  return { world: next, stocks: shedHeat(grow(kept.crust, fed, lamps.lit)), crust: kept.crust };
+  const grown = grow(kept.crust, fed, lamps.lit);
+  return { world: next, stocks: shedHeat(leakCabin(grown)), crust: kept.crust };
 }
 
 export function commitPoweredCut(
