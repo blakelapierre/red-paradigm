@@ -45,6 +45,7 @@ import { commitSabatier } from "@/lib/yard/sabatier";
 import { commitElectrolysis } from "@/lib/yard/electrolysis";
 import { commitMine } from "@/lib/yard/ice";
 import { commitCompress } from "@/lib/yard/compress";
+import { commitVent } from "@/lib/yard/vent";
 import { commitMill } from "@/lib/yard/mill";
 import { commitDump } from "@/lib/yard/dump";
 import { commitPaint } from "@/lib/yard/paint";
@@ -449,6 +450,12 @@ export function Council() {
               setWitnessCut({ accepted: bottled.accepted, reason: bottled.reason });
               setPair((p) => ({ ...p, canonStocks: bottled.a, witnessStocks: bottled.b }));
             }}
+            onVent={() => {
+              const vented = commitVent(pair.canonStocks, pair.witnessStocks, pair.canon);
+              setCanonCut({ accepted: vented.accepted, reason: vented.reason });
+              setWitnessCut({ accepted: vented.accepted, reason: vented.reason });
+              setPair((p) => ({ ...p, canonStocks: vented.a, witnessStocks: vented.b }));
+            }}
             onSplit={() => {
               const split = commitElectrolysis(pair.canonStocks, pair.witnessStocks);
               setCanonCut({ accepted: split.accepted, reason: split.reason });
@@ -666,6 +673,7 @@ function Former({
   onPaint,
   onMine,
   onCompress,
+  onVent,
   onSplit,
   onSabatier,
   onBurn,
@@ -696,6 +704,7 @@ function Former({
   onPaint: () => void;
   onMine: () => void;
   onCompress: () => void;
+  onVent: () => void;
   onSplit: () => void;
   onSabatier: () => void;
   onBurn: () => void;
@@ -767,6 +776,9 @@ function Former({
       <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onCompress}>
         Bottle 44 kg CO2
       </button>
+      <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onVent}>
+        Vent 1 kg cabin CO2
+      </button>
       <button type="button" className="mt-2 min-h-11 w-full rounded-sm border border-line px-3 text-sm text-fg" onClick={onSplit}>
         Electrolyze 36 kg
       </button>
@@ -810,7 +822,7 @@ function Former({
         ice {formatKg(stocks.iceKg)} · water {formatKg(stocks.waterKg)} · brine {formatKg(stocks.brineKg)} · O2 {formatKg(stocks.o2Kg)} · H2 {formatKg(stocks.h2Kg)} · CO2 {formatKg(stocks.co2Kg)} · cabin CO2 {formatKg(stocks.cabinCo2Kg)} · CH4 {formatKg(stocks.ch4Kg)} · toxin {stocks.toxinMilli} · debt {stocks.debt ? "owed" : "clear"} · biomass {stocks.biomassG} g · collector {stocks.collector ? "up" : "down"} · health {stocks.healthMilli}/1000 · reactor {stocks.reactor ? "on" : "off"} · cabin +{stocks.cabinRiseK} K · column {stocks.drawnKg}/10000 kg · heat {stocks.heatKwh} kWh · radiator {stocks.radiator ? "up" : "down"}
       </p>
       <p className="mt-2 text-xs text-muted">
-        Each sol takes 1 kg of oxygen and 3 kg of water. If either is short, the sol is owed and neither is spent. A breathed sol leaves 1 kg of CO2 in the cabin. Dirty water is not split. Wash the tanks first. A roof costs 10,000 kWh that same sol. If the battery cannot pay, every roof comes down. Under a standing roof, with clean water and no debt, one gram of biomass grows and one kilogram of water is spent. The air mass does not move. A collector costs 30,000 kg of fines. On a stripping sol it returns a tenth of the particle mass that left this array's climate cell. Five grams per square meter per optical depth is an order of magnitude. A clear sol returns nothing. A stripping sol also takes 10/1000 off the array after that sol's power is banked. Repair spends 10,000 kg of fines to put 100/1000 back. Methane in the open loses 1 percent a sol, and at least 1 kg when the tank is smaller than 100 kg. Open water does the same. Open hydrogen loses 10 percent. Open oxygen loses 1 percent. A standing roof holds them. Heating that vessel costs 10,000 kWh per kelvin, up to 40 K above the yard. The climate cell does not move. Drawing water takes 1 kg and 50 kWh from a column of about 10,000 kg over this kilometer. At 10,000 kg the order refuses. The air mass does not move. About 40 kWh of each 200 kWh split does not stay in the hydrogen. Past 80 kWh the cell waits. The open yard sheds 40 kWh a sol. A radiator costs 20,000 kg of fines and sheds 200.
+        Each sol takes 1 kg of oxygen and 3 kg of water. If either is short, the sol is owed and neither is spent. A breathed sol leaves 1 kg of CO2 in the cabin. At 5 kg the gram does not grow. Venting 1 kg costs 5 kWh and does not move the air mass. Dirty water is not split. Wash the tanks first. A roof costs 10,000 kWh that same sol. If the battery cannot pay, every roof comes down. Under a standing roof, with clean water and no debt, one gram of biomass grows and one kilogram of water is spent. The air mass does not move. A collector costs 30,000 kg of fines. On a stripping sol it returns a tenth of the particle mass that left this array's climate cell. Five grams per square meter per optical depth is an order of magnitude. A clear sol returns nothing. A stripping sol also takes 10/1000 off the array after that sol's power is banked. Repair spends 10,000 kg of fines to put 100/1000 back. Methane in the open loses 1 percent a sol, and at least 1 kg when the tank is smaller than 100 kg. Open water does the same. Open hydrogen loses 10 percent. Open oxygen loses 1 percent. A standing roof holds them. Heating that vessel costs 10,000 kWh per kelvin, up to 40 K above the yard. The climate cell does not move. Drawing water takes 1 kg and 50 kWh from a column of about 10,000 kg over this kilometer. At 10,000 kg the order refuses. The air mass does not move. About 40 kWh of each 200 kWh split does not stay in the hydrogen. Past 80 kWh the cell waits. The open yard sheds 40 kWh a sol. A radiator costs 20,000 kg of fines and sheds 200.
       </p>
       <p className="mt-2 text-xs text-muted">
         One kilometer, two meters down, 3,000,000,000 kg at 1,500 kg/m³. The cut costs {formatKwh(CUT_KWH)}. It will not cut a kilometer that has a roof. Below 612 Pa the ice order is vapor and is not bottled. Bottled CO2 is a local 44 kg, and Sabatier spends it. A mill batch is 100,000,000 kg of spoil and 1,000,000 kWh. Five percent is fines. The other ninety-five percent stays as tailings. One centimeter of that fill is 15,000,000 kg back in the hole, and it does not free a second cut. Paint is 50,000 kg of fines on this kilometer, albedo 0.10. This cell's albedo stays {(climateAlbedoMilli / 1000).toFixed(3)}. The coat is {paintOf(canon, at.ix, at.iy) > 0 ? "on" : "not on"} this kilometer. Floor pressure moves by {delta.toFixed(2)} Pa.
