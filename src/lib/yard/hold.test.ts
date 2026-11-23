@@ -2,8 +2,9 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { airKg, createWorld, step } from "../climate/model.ts";
 import { createCrust, setFlag } from "../crust/crust.ts";
+import { turnHash } from "../turn.ts";
 import { BED_CAP } from "./bed.ts";
-import { cradleHolding, markHold } from "./hold.ts";
+import { HELD_MARK, cradleHolding, kilometerHolds, markHold } from "./hold.ts";
 import { CABIN_O2_KG } from "./meter.ts";
 import { closeSol, createStocks, stocksBytes } from "./power.ts";
 import { STALE_CO2_KG, commitVent } from "./vent.ts";
@@ -127,5 +128,47 @@ test("a vent between sols lets the run pass five breaths", () => {
   for (let sol = 0; sol < sols; sol++) stepped = step(stepped, { fileStorm: true });
   assert.equal(airKg(world.ls), airKg(stepped.ls));
 });
+
+test("ten holding sols is the mark, and the air mass only followed the sun", () => {
+  const roof = setFlag(createCrust(), 1, 2, "roof", 1);
+  const origin = createWorld();
+  let world = origin;
+  let witness = origin;
+  let stocks = {
+    ...createStocks(),
+    lamp: 1,
+    beds: BED_CAP,
+    cabinO2Kg: CABIN_O2_KG + BigInt(HELD_MARK),
+    biomassG: 500,
+    o2Kg: BigInt(HELD_MARK),
+    waterKg: 28n * BigInt(HELD_MARK),
+  };
+  let other = stocks;
+  let crust = roof;
+  for (let sol = 0; sol < HELD_MARK; sol++) {
+    const closed = closeSol(world, stocks, crust);
+    const twin = closeSol(witness, other, crust);
+    world = closed.world;
+    witness = twin.world;
+    stocks = closed.stocks;
+    other = twin.stocks;
+    crust = closed.crust;
+    assert.equal(kilometerHolds(stocks), sol + 1 >= HELD_MARK);
+    assert.equal(turnHash(world, crust, stocks), turnHash(witness, twin.crust, other));
+    if (sol + 1 < HELD_MARK) {
+      const vented = commitVent(stocks, other, world);
+      assert.equal(vented.accepted, true);
+      stocks = vented.a;
+      other = vented.b;
+    }
+  }
+  assert.equal(stocks.heldSols, HELD_MARK);
+  assert.equal(kilometerHolds(stocks), true);
+  assert.equal(world.tauAerMilli[0], origin.tauAerMilli[0]);
+  let stepped = origin;
+  for (let sol = 0; sol < HELD_MARK; sol++) stepped = step(stepped, { fileStorm: true });
+  assert.equal(airKg(world.ls), airKg(stepped.ls));
+});
+
 
 
