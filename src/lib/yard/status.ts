@@ -1,10 +1,11 @@
 import { type Crust } from "../crust/crust.ts";
 import { BED_CAP } from "./bed.ts";
 import { RATION_G } from "./food.ts";
+import { HEALTH_FULL } from "./health.ts";
 import { HELD_MARK } from "./hold.ts";
 import { type Stocks } from "./power.ts";
 
-/** The five lines a player needs. The stock grid is the rest. */
+/** The lines a player needs. The stock grid is the rest. */
 export function vesselLines(crust: Crust, stocks: Stocks): string[] {
   const roof = crust.overrides.some((row) => row.roof === 1);
   return [
@@ -13,5 +14,6 @@ export function vesselLines(crust: Crust, stocks: Stocks): string[] {
     `Food ${stocks.biomassG}/${RATION_G} g`,
     `Cabin ${stocks.cabinO2Kg.toString()} kg`,
     `Hold ${stocks.heldSols}/${HELD_MARK}`,
+    `Panels ${stocks.healthMilli}/${HEALTH_FULL}`,
   ];
 }
