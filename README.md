@@ -30,6 +30,7 @@ The council map is a climate tick and one former, not the whole game.
 - Roof upkeep. 10,000 kWh a sol, taken after the array is banked. If the battery cannot pay, the roof flags come down. The climate cell does not move.
 - One gram of biomass a sol, under a roof, with clean water and no debt, and cabin CO2 under 5 kg. It spends one kilogram of water. It does not touch the air.
 - Food. The crew eats 500 g of biomass a sol, or the sol is short of food. The plot grows one gram. Today's gram does not pay today's ration.
+- A lamp. 20,000 kg of fines, under a roof. Growth becomes 20 g a sol. That is still not a ration.
 - A collector. 30,000 kg of fines. On a stripping sol it returns a tenth of the particle mass that left the array's climate cell, up to the warehouse cap. A clear sol returns nothing. Five grams per square meter per optical depth is an order of magnitude.
 - Array health. It starts at 1000/1000 and scales the array the board shows. A stripping sol takes 10 off after that sol is banked. Repair spends 10,000 kg of fines and puts 100 back.
 - One kilopower. 10 kW for 24 hours is 240 kWh a sol, added after the array and not scaled by dust or panel health. It starts once, for both clients.
