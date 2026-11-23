@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { airKg, createWorld } from "../climate/model.ts";
 import { createCrust, setFlag } from "../crust/crust.ts";
-import { boilWater, ventHydrogen } from "./open.ts";
+import { boilWater, ventHydrogen, ventOxygen } from "./open.ts";
 import { closeSol, createStocks } from "./power.ts";
 
 test("open water loses at least a kilogram and a roof holds it", () => {
@@ -29,4 +29,17 @@ test("open hydrogen loses a tenth, and a roof holds it", () => {
   assert.equal(held.stocks.h2Kg, 1000n);
   const lost = closeSol(world, { ...createStocks(), h2Kg: 1000n }, createCrust());
   assert.equal(lost.stocks.h2Kg, 900n);
+});
+
+test("open oxygen loses one percent, and a roof holds it", () => {
+  const world = createWorld();
+  const open = ventOxygen(createCrust(), { ...createStocks(), o2Kg: 32n });
+  assert.equal(open.o2Kg, 31n);
+  const pile = ventOxygen(createCrust(), { ...createStocks(), o2Kg: 500n });
+  assert.equal(pile.o2Kg, 495n);
+  const roof = setFlag(createCrust(), 1, 2, "roof", 1);
+  const held = closeSol(world, { ...createStocks(), o2Kg: 32n }, roof);
+  assert.equal(held.stocks.o2Kg, 32n);
+  const lost = closeSol(world, { ...createStocks(), o2Kg: 32n }, createCrust());
+  assert.equal(lost.stocks.o2Kg, 31n);
 });

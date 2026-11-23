@@ -2,7 +2,7 @@ import { PANEL_M2, cellLat, latIndexOf } from "../climate/constants.ts";
 import { inspect, siteIndex, step, stormTau, type World } from "../climate/model.ts";
 import { commitDig, flagOf, type Crust } from "../crust/crust.ts";
 import { boilMethane } from "./boil.ts";
-import { boilWater, ventHydrogen } from "./open.ts";
+import { boilWater, ventHydrogen, ventOxygen } from "./open.ts";
 import { grow } from "./biomass.ts";
 import { collectSalvage } from "./collector.ts";
 import { drawCrew } from "./crew.ts";
@@ -129,7 +129,8 @@ export function closeSol(
   const boiled = boilMethane(kept.crust, kept.stocks);
   const wet = boilWater(kept.crust, boiled);
   const light = ventHydrogen(kept.crust, wet);
-  return { world: next, stocks: shedHeat(grow(kept.crust, light)), crust: kept.crust };
+  const aired = ventOxygen(kept.crust, light);
+  return { world: next, stocks: shedHeat(grow(kept.crust, aired)), crust: kept.crust };
 }
 
 export function commitPoweredCut(
