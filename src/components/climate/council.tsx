@@ -600,7 +600,10 @@ export function Council() {
                   {publicFace(tableState.table).worksThrough ? " The Works held through the storm." : ""}
                   {stormVerdict(tableState.table) ? ` ${stormVerdict(tableState.table)}` : ""}
                   {splitLine(tableState.split) ? ` ${splitLine(tableState.split)}` : ""} Leave the table and this
-                  board runs alone.
+                  board runs alone.{" "}
+                  <button type="button" className="text-frost" onClick={() => setManual("Two yards")}>
+                    Two yards
+                  </button>
                 </p>
               ) : null}
             </div>

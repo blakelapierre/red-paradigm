@@ -59,5 +59,8 @@ test("the manual quotes the constants, not a second set of numbers", () => {
   assert.match(burn?.doesNot ?? "", /does not add that CO₂ to the air/);
   const hash = entryByTitle("Turn hash");
   assert.match(hash?.doesNot ?? "", /does not split/);
+  const yards = entryByTitle("Two yards");
+  assert.match(yards?.does ?? "", /One window is one yard/);
+  assert.match(yards?.doesNot ?? "", /not two seats/);
   assert.equal(MANUAL.some((entry) => /mars/i.test(`${entry.title} ${entry.does}`)), false);
 });
