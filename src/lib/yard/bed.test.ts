@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { airKg, createWorld } from "../climate/model.ts";
 import { createCrust, setFlag } from "../crust/crust.ts";
+import { turnHash } from "../turn.ts";
+import { BED_FINES_KG, commitPlant } from "./bed.ts";
 import { grow } from "./biomass.ts";
 import { createStocks, stocksBytes } from "./power.ts";
 
@@ -25,4 +28,34 @@ test("beds scale the gram and the water, or the sol grows nothing", () => {
   const lit = grow(roof, { ...createStocks(), beds: 2, waterKg: 2n, lamp: 1 });
   assert.equal(lit.biomassG, 40);
   assert.equal(lit.waterKg, 0n);
+});
+
+test("a bed is planted for both clients, or for neither", () => {
+  const roof = setFlag(createCrust(), 1, 2, "roof", 1);
+  const bare = createCrust();
+  const stocks = { ...createStocks(), finesKg: BED_FINES_KG };
+  const open = commitPlant(bare, bare, stocks, stocks);
+  assert.equal(open.accepted, false);
+  assert.equal(open.a.beds, 1);
+  assert.equal(open.a.finesKg, BED_FINES_KG);
+  const poor = commitPlant(roof, roof, createStocks(), createStocks());
+  assert.equal(poor.accepted, false);
+  assert.equal(poor.reason, `need ${BED_FINES_KG} kg of fines`);
+  const world = createWorld();
+  const beforeAir = airKg(world.ls);
+  const up = commitPlant(roof, roof, stocks, stocks);
+  assert.equal(up.accepted, true);
+  assert.equal(up.a.beds, 2);
+  assert.equal(up.b.beds, 2);
+  assert.equal(up.a.finesKg, 0n);
+  assert.equal(up.b.finesKg, 0n);
+  assert.equal(airKg(world.ls), beforeAir);
+  const split = commitPlant(roof, roof, stocks, createStocks());
+  assert.equal(split.accepted, false);
+  assert.equal(split.a.beds, 1);
+  assert.equal(split.b.finesKg, 0n);
+  const hashA = turnHash(world, roof, stocks);
+  const hashB = turnHash(world, roof, createStocks());
+  assert.equal(turnHash(world, roof, split.a), hashA);
+  assert.equal(turnHash(world, roof, split.b), hashB);
 });
