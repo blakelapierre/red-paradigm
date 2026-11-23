@@ -82,6 +82,7 @@ type Pair = {
   canonStocks: Stocks;
   witnessStocks: Stocks;
   log: string[];
+  halt: boolean;
 };
 
 function fresh(): Pair {
@@ -93,6 +94,7 @@ function fresh(): Pair {
     canonStocks: createStocks(),
     witnessStocks: createStocks(),
     log: [],
+    halt: false,
   };
 }
 
@@ -122,7 +124,7 @@ function siteFrom(p: Pair, selected: number) {
 function applySols(p: Pair, sols: number, aims: readonly Aim[], selected: number, follow: boolean): Pair {
   const result = bankSols(toYard(p), sols, aims, siteFrom(p, selected), follow);
   const log = !follow ? p.log : result.landed.length ? result.landed.slice(-8) : ["The list spent nothing."];
-  return { ...result.yard, log };
+  return { ...result.yard, log, halt: follow ? result.quiet || result.holds : result.holds };
 }
 
 function applyList(p: Pair, aims: readonly Aim[], selected: number): Pair {
@@ -183,6 +185,10 @@ export function Council() {
   aimsRef.current = aims;
   followRef.current = follow;
   selectedRef.current = selected;
+
+  useEffect(() => {
+    if (playing && pair.halt) setPlaying(false);
+  }, [playing, pair.halt]);
 
   useEffect(() => {
     if (!playing) return;

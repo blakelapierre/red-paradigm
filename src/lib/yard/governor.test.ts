@@ -147,3 +147,34 @@ test("ration plants one bed and does not cut or loft", () => {
   assert.equal(turnHash(missed.yard.witness, missed.yard.witnessCrust, missed.yard.witnessStocks), before);
 });
 
+test("the run stops on a quiet sol, and on the mark", () => {
+  const site = cradleSite();
+  const off = DEFAULT_AIMS.map((aim) => ({ ...aim, on: false }));
+  const quiet = bankSols(freshYard(), 4, off, site, true);
+  assert.equal(quiet.quiet, true);
+  assert.equal(quiet.holds, false);
+  assert.equal(quiet.yard.canon.sol, 1);
+  const roof = setFlag(createCrust(), 1, 2, "roof", 1);
+  const yard = freshYard();
+  yard.canonCrust = roof;
+  yard.witnessCrust = roof;
+  const ready = {
+    ...yard.canonStocks,
+    lamp: 1,
+    beds: 25,
+    cabinO2Kg: 29n,
+    biomassG: 500,
+    o2Kg: 1n,
+    waterKg: 28n,
+    heldSols: 9,
+  };
+  yard.canonStocks = ready;
+  yard.witnessStocks = ready;
+  const marked = bankSols(yard, 5, DEFAULT_AIMS, site, true);
+  assert.equal(marked.holds, true);
+  assert.equal(marked.yard.canon.sol, 1);
+  assert.equal(marked.yard.canonStocks.heldSols, 10);
+  assert.equal(marked.yard.witnessStocks.heldSols, 10);
+});
+
+

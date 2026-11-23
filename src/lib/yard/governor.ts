@@ -21,6 +21,7 @@ import { commitRoof } from "./roof.ts";
 import { commitSabatier } from "./sabatier.ts";
 import { commitVent } from "./vent.ts";
 import { commitWash } from "./wash.ts";
+import { kilometerHolds } from "./hold.ts";
 
 /** A general aim. The buttons still issue one order. The list is not a second physics. */
 export type AimId = "power" | "cut" | "mill" | "shelter" | "ration" | "water" | "fuel" | "column" | "veil" | "ground" | "array";
@@ -196,17 +197,18 @@ export function workList(
   return { yard: next, landed };
 }
 
-/** Close sols, then one pass of the list after each close, if the yard is set to follow. */
+/** Close sols, then one pass of the list after each close, if the yard is set to follow. Stops when the mark lands, or when a followed sol spends nothing. */
 export function bankSols(
   yard: Yard,
   sols: number,
   aims: readonly Aim[],
   site: WorkSite,
   follow: boolean,
-): { yard: Yard; landed: string[] } {
+): { yard: Yard; landed: string[]; quiet: boolean; holds: boolean } {
   let next = yard;
   const landed: string[] = [];
   const steps = Math.max(0, Math.floor(sols));
+  let quiet = false;
   for (let i = 0; i < steps; i++) {
     const canon = closeSol(next.canon, next.canonStocks, next.canonCrust);
     const witness = closeSol(next.witness, next.witnessStocks, next.witnessCrust);
@@ -218,12 +220,19 @@ export function bankSols(
       canonStocks: canon.stocks,
       witnessStocks: witness.stocks,
     };
+    if (kilometerHolds(next.canonStocks) && kilometerHolds(next.witnessStocks)) {
+      return { yard: next, landed, quiet: false, holds: true };
+    }
     if (!follow) continue;
     const worked = workList(next, aims, site);
     next = worked.yard;
     landed.push(...worked.landed);
+    if (worked.landed.length === 0) {
+      quiet = true;
+      break;
+    }
   }
-  return { yard: next, landed };
+  return { yard: next, landed, quiet, holds: false };
 }
 
 export function moveAim(aims: readonly Aim[], index: number, dir: -1 | 1): Aim[] {
