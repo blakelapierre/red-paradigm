@@ -45,6 +45,7 @@ export type Stocks = {
   cabinCo2Kg: bigint;
   foodDebt: number;
   lamp: number;
+  beds: number;
   cableOn: number;
   cableIx: number;
   cableIy: number;
@@ -76,6 +77,7 @@ export function createStocks(): Stocks {
     cabinCo2Kg: 0n,
     foodDebt: 0,
     lamp: 0,
+    beds: 1,
     cableOn: 0,
     cableIx: 0,
     cableIy: 0,
@@ -94,7 +96,7 @@ export function credit(stocks: Stocks, kwh: number): Stocks {
 }
 
 export function stocksBytes(stocks: Stocks): Uint8Array {
-  const bytes = new Uint8Array(152);
+  const bytes = new Uint8Array(156);
   const view = new DataView(bytes.buffer);
   bytes.set([0x50, 0x57, 0x52, 0x31]);
   view.setUint32(4, stocks.batteryKwh);
@@ -134,6 +136,7 @@ export function stocksBytes(stocks: Stocks): Uint8Array {
   view.setUint32(140, stocks.cableIy >>> 0);
   view.setUint32(144, Number((stocks.cabinO2Kg >> 32n) & 0xffffffffn));
   view.setUint32(148, Number(stocks.cabinO2Kg & 0xffffffffn));
+  view.setUint32(152, stocks.beds >>> 0);
   return bytes;
 }
 
