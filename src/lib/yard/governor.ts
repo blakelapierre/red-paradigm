@@ -2,6 +2,8 @@ import { type World } from "../climate/model.ts";
 import { type Crust } from "../crust/crust.ts";
 import { commitBerm } from "./berm.ts";
 import { commitBeds, BED_CAP } from "./bed.ts";
+import { BIOMASS_WATER_KG } from "./biomass.ts";
+import { CREW_WATER_KG } from "./crew.ts";
 import { commitCollector } from "./collector.ts";
 import { commitCompress } from "./compress.ts";
 import { commitCondenser } from "./condenser.ts";
@@ -130,7 +132,12 @@ function runAim(yard: Yard, id: AimId, site: WorkSite, landed: string[]): Yard {
     return takeStocks(yard, commitBeds(yard.canonCrust, yard.witnessCrust, yard.canonStocks, yard.witnessStocks), landed);
   }
   if (id === "water") {
-    const mined = takeStocks(yard, commitMine(yard.canonStocks, yard.witnessStocks, pressurePa), landed);
+    let next = yard;
+    if (next.canonStocks.toxinMilli !== 0 || next.witnessStocks.toxinMilli !== 0) {
+      next = takeStocks(next, commitWash(next.canonStocks, next.witnessStocks), landed);
+    }
+    if (!waterShort(next.canonStocks) && !waterShort(next.witnessStocks)) return next;
+    const mined = takeStocks(next, commitMine(next.canonStocks, next.witnessStocks, pressurePa), landed);
     return takeStocks(mined, commitWash(mined.canonStocks, mined.witnessStocks), landed);
   }
   if (id === "fuel") {
@@ -202,6 +209,11 @@ export function workList(
 
 function floorReady(crust: Crust, stocks: Stocks): boolean {
   return crust.overrides.some((row) => row.roof === 1) && stocks.lamp === 1 && stocks.beds >= BED_CAP;
+}
+
+function waterShort(stocks: Stocks): boolean {
+  const need = CREW_WATER_KG + BigInt(Math.max(0, stocks.beds)) * BIOMASS_WATER_KG;
+  return stocks.waterKg < need;
 }
 
 /** Close sols, then one pass of the list after each close, if the yard is set to follow. Stops when the mark lands, or when a followed sol spends nothing. */

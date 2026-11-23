@@ -192,5 +192,23 @@ test("a finished floor is not cut or milled", () => {
   assert.equal(worked.landed.length, 0);
 });
 
+test("a full tank is not mined", () => {
+  const yard = freshYard();
+  const full = { ...yard.canonStocks, waterKg: 100n, batteryKwh: 1_000 };
+  yard.canonStocks = full;
+  yard.witnessStocks = full;
+  const aims = DEFAULT_AIMS.map((aim) => ({ ...aim, on: aim.id === "water" }));
+  const worked = workList(yard, aims, cradleSite());
+  assert.equal(worked.landed.length, 0);
+  assert.equal(worked.yard.canonStocks.iceKg, full.iceKg);
+  const dry = freshYard();
+  dry.canonStocks = { ...dry.canonStocks, batteryKwh: 1_000 };
+  dry.witnessStocks = { ...dry.witnessStocks, batteryKwh: 1_000 };
+  const mined = workList(dry, aims, cradleSite());
+  assert.equal(mined.yard.canonStocks.iceKg, full.iceKg - 1000n);
+  assert.equal(mined.yard.witnessStocks.iceKg, mined.yard.canonStocks.iceKg);
+});
+
+
 
 
