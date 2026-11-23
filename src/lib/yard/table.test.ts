@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { bothSealed, closeIfSealed, closeTable, createTable, sealSeat, seatSite } from "./table.ts";
+import { bothSealed, closeIfSealed, closeTable, createTable, runSeat, sealSeat, seatSite } from "./table.ts";
 import { DEFAULT_AIMS } from "./governor.ts";
-import { closeSol, createStocks } from "./power.ts";
+import { CUT_KWH, closeSol, createStocks, stocksBytes } from "./power.ts";
 import { createCrust } from "../crust/crust.ts";
 import { createWorld } from "../climate/model.ts";
 
@@ -48,4 +48,18 @@ test("the sol does not close until both yards have sealed it", () => {
   assert.equal(closed.table.climate.sol, 1);
   assert.equal(closed.table.cradle.sealedSol, null);
   assert.equal(closed.table.works.sealedSol, null);
+});
+
+test("a list cannot spend the other yard", () => {
+  const table = createTable();
+  table.cradle.stocks = { ...table.cradle.stocks, batteryKwh: CUT_KWH };
+  table.cradle.witnessStocks = { ...table.cradle.witnessStocks, batteryKwh: CUT_KWH };
+  table.cradle.aims = DEFAULT_AIMS.map((aim) => ({ ...aim, on: aim.id === "cut" }));
+  const before = Buffer.from(stocksBytes(table.works.stocks)).toString("hex");
+  const ran = runSeat(table, "cradle");
+  assert.ok(ran.table.cradle.crust.spoilKg > 0n);
+  assert.equal(ran.table.works.crust.spoilKg, 0n);
+  assert.equal(ran.table.works.stocks.batteryKwh, 0);
+  assert.equal(Buffer.from(stocksBytes(ran.table.works.stocks)).toString("hex"), before);
+  assert.equal(ran.table.works.witnessStocks.batteryKwh, 0);
 });

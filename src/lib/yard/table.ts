@@ -1,7 +1,7 @@
 import { cellLat, cellLon, latIndexOf, lonIndexOf } from "../climate/constants.ts";
 import { createWorld, siteIndex, step, surveyPressure, type World } from "../climate/model.ts";
 import { cellOf, createCrust, type Crust } from "../crust/crust.ts";
-import { DEFAULT_AIMS, type Aim, type WorkSite } from "./governor.ts";
+import { DEFAULT_AIMS, workList, type Aim, type WorkSite, type Yard } from "./governor.ts";
 import { createStocks, liveSol, type Stocks } from "./power.ts";
 
 /** One window is one yard. The other yard is another window, not a second seat here. */
@@ -99,4 +99,35 @@ export function bothSealed(table: Table): boolean {
 export function closeIfSealed(table: Table): { table: Table; closed: boolean } {
   if (!bothSealed(table)) return { table, closed: false };
   return { table: closeTable(table), closed: true };
+}
+
+/** Spend this yard's list. The other yard's stocks and crust are not in the order. */
+export function runSeat(table: Table, seat: SeatId, site: WorkSite = seatSite(table.climate, seat)): { table: Table; landed: string[] } {
+  const row = table[seat];
+  const yard: Yard = {
+    canon: table.climate,
+    witness: table.witness,
+    canonCrust: row.crust,
+    witnessCrust: row.witnessCrust,
+    canonStocks: row.stocks,
+    witnessStocks: row.witnessStocks,
+  };
+  const worked = workList(yard, row.aims, site);
+  const other: SeatId = seat === "cradle" ? "works" : "cradle";
+  return {
+    landed: worked.landed,
+    table: {
+      ...table,
+      climate: worked.yard.canon,
+      witness: worked.yard.witness,
+      [seat]: {
+        ...row,
+        crust: worked.yard.canonCrust,
+        witnessCrust: worked.yard.witnessCrust,
+        stocks: worked.yard.canonStocks,
+        witnessStocks: worked.yard.witnessStocks,
+      },
+      [other]: table[other],
+    },
+  };
 }
