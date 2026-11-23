@@ -791,7 +791,7 @@ export function Council() {
             }}
             onCable={() => {
               const at = cellOf(view.lat, view.lon);
-              const laid = commitCable(pair.canonStocks, pair.witnessStocks, at.ix, at.iy);
+              const laid = commitCable(pair.canonStocks, pair.witnessStocks, at.ix, at.iy, tableOn ? seat : "cradle");
               setCanonCut({ accepted: laid.accepted, reason: laid.reason });
               setWitnessCut({ accepted: laid.accepted, reason: laid.reason });
               setPair((p) => ({ ...p, canonStocks: laid.a, witnessStocks: laid.b }));
