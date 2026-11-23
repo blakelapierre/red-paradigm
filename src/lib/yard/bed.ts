@@ -29,3 +29,27 @@ export function commitPlant(
   const take = (s: Stocks): Stocks => ({ ...s, finesKg: s.finesKg - BED_FINES_KG, beds: s.beds + 1 });
   return { a: take(aStocks), b: take(bStocks), accepted: true, reason: "one bed planted. the climate cell did not move" };
 }
+
+/** Every bed the fines will pay, up to the cap. Stops at the first refusal. Both clients, or neither, on each bed. */
+export function commitBeds(
+  a: Crust,
+  b: Crust,
+  aStocks: Stocks,
+  bStocks: Stocks,
+): { a: Stocks; b: Stocks; accepted: boolean; reason: string; planted: number } {
+  let nextA = aStocks;
+  let nextB = bStocks;
+  let planted = 0;
+  let reason = "a bed needs a roof";
+  for (;;) {
+    const step = commitPlant(a, b, nextA, nextB);
+    if (!step.accepted) {
+      if (planted === 0) return { a: aStocks, b: bStocks, accepted: false, reason: step.reason, planted: 0 };
+      return { a: nextA, b: nextB, accepted: true, reason, planted };
+    }
+    nextA = step.a;
+    nextB = step.b;
+    planted += 1;
+    reason = planted === 1 ? step.reason : `planted ${planted} beds. the climate cell did not move`;
+  }
+}

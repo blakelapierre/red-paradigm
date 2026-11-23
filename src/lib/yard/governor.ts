@@ -1,7 +1,7 @@
 import { type World } from "../climate/model.ts";
 import { type Crust } from "../crust/crust.ts";
 import { commitBerm } from "./berm.ts";
-import { commitPlant } from "./bed.ts";
+import { commitBeds } from "./bed.ts";
 import { commitCollector } from "./collector.ts";
 import { commitCompress } from "./compress.ts";
 import { commitCondenser } from "./condenser.ts";
@@ -126,7 +126,7 @@ function runAim(yard: Yard, id: AimId, site: WorkSite, landed: string[]): Yard {
     return takeStocks(next, commitRadiator(next.canonStocks, next.witnessStocks), landed);
   }
   if (id === "ration") {
-    return takeStocks(yard, commitPlant(yard.canonCrust, yard.witnessCrust, yard.canonStocks, yard.witnessStocks), landed);
+    return takeStocks(yard, commitBeds(yard.canonCrust, yard.witnessCrust, yard.canonStocks, yard.witnessStocks), landed);
   }
   if (id === "water") {
     const mined = takeStocks(yard, commitMine(yard.canonStocks, yard.witnessStocks, pressurePa), landed);

@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { airKg, createWorld } from "../climate/model.ts";
 import { createCrust, setFlag } from "../crust/crust.ts";
 import { turnHash } from "../turn.ts";
-import { BED_CAP, BED_FINES_KG, RATION_BED_FINES_KG, commitPlant } from "./bed.ts";
+import { BED_CAP, BED_FINES_KG, RATION_BED_FINES_KG, commitBeds, commitPlant } from "./bed.ts";
 import { grow } from "./biomass.ts";
 import { RATION_G } from "./food.ts";
 import { LAMP_G } from "./lamp.ts";
@@ -94,4 +94,19 @@ test("one mill batch pays the added beds and leaves a bed the cap will not spend
   assert.equal(refused.accepted, false);
   assert.equal(refused.a.finesKg, BED_FINES_KG);
 });
+
+test("one pass plants every bed the fines will pay", () => {
+  const roof = setFlag(createCrust(), 1, 2, "roof", 1);
+  const stocks = { ...createStocks(), finesKg: MILL_FINES_KG };
+  const planted = commitBeds(roof, roof, stocks, stocks);
+  assert.equal(planted.accepted, true);
+  assert.equal(planted.planted, BED_CAP - 1);
+  assert.equal(planted.a.beds, BED_CAP);
+  assert.equal(planted.b.beds, BED_CAP);
+  assert.equal(planted.a.finesKg, BED_FINES_KG);
+  const again = commitBeds(roof, roof, planted.a, planted.b);
+  assert.equal(again.accepted, false);
+  assert.equal(again.a.finesKg, BED_FINES_KG);
+});
+
 
