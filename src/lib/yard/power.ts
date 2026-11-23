@@ -2,6 +2,7 @@ import { PANEL_M2, cellLat, latIndexOf } from "../climate/constants.ts";
 import { inspect, siteIndex, step, stormTau, type World } from "../climate/model.ts";
 import { commitDig, flagOf, type Crust } from "../crust/crust.ts";
 import { boilMethane } from "./boil.ts";
+import { CRADLE_CELL } from "./cable.ts";
 import { boilWater, ventHydrogen, ventOxygen } from "./open.ts";
 import { grow } from "./biomass.ts";
 import { collectSalvage } from "./collector.ts";
@@ -44,6 +45,9 @@ export type Stocks = {
   cabinCo2Kg: bigint;
   foodDebt: number;
   lamp: number;
+  cableOn: number;
+  cableIx: number;
+  cableIy: number;
 };
 
 export function createStocks(): Stocks {
@@ -71,6 +75,9 @@ export function createStocks(): Stocks {
     cabinCo2Kg: 0n,
     foodDebt: 0,
     lamp: 0,
+    cableOn: 0,
+    cableIx: 0,
+    cableIy: 0,
   };
 }
 
@@ -85,7 +92,7 @@ export function credit(stocks: Stocks, kwh: number): Stocks {
 }
 
 export function stocksBytes(stocks: Stocks): Uint8Array {
-  const bytes = new Uint8Array(132);
+  const bytes = new Uint8Array(144);
   const view = new DataView(bytes.buffer);
   bytes.set([0x50, 0x57, 0x52, 0x31]);
   view.setUint32(4, stocks.batteryKwh);
@@ -120,6 +127,9 @@ export function stocksBytes(stocks: Stocks): Uint8Array {
   view.setUint32(120, Number(stocks.cabinCo2Kg & 0xffffffffn));
   view.setUint32(124, stocks.foodDebt >>> 0);
   view.setUint32(128, stocks.lamp >>> 0);
+  view.setUint32(132, stocks.cableOn >>> 0);
+  view.setUint32(136, stocks.cableIx >>> 0);
+  view.setUint32(140, stocks.cableIy >>> 0);
   return bytes;
 }
 
@@ -157,6 +167,12 @@ export function commitPoweredCut(
   ix: number,
   iy: number,
 ): { a: Crust; b: Crust; aStocks: Stocks; bStocks: Stocks; accepted: boolean; reason: string } {
+  const atCradle = ix === CRADLE_CELL.ix && iy === CRADLE_CELL.iy;
+  const aWired = aStocks.cableOn === 1 && aStocks.cableIx === ix && aStocks.cableIy === iy;
+  const bWired = bStocks.cableOn === 1 && bStocks.cableIx === ix && bStocks.cableIy === iy;
+  if (!atCradle && (!aWired || !bWired)) {
+    return { a, b, aStocks, bStocks, accepted: false, reason: "no line from the cradle array to that kilometer" };
+  }
   if (flagOf(a, ix, iy, "roof") || flagOf(b, ix, iy, "roof")) {
     return { a, b, aStocks, bStocks, accepted: false, reason: "the vessel is standing on that kilometer" };
   }

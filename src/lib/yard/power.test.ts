@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createWorld, step } from "../climate/model.ts";
 import { createCrust, crustHash, setFlag } from "../crust/crust.ts";
+import { CRADLE_CELL } from "./cable.ts";
 import { CUT_KWH, arrayKwh, closeSol, commitPoweredCut, createStocks, credit } from "./power.ts";
 
 test("one clear sol cannot pay for the cut and two sols can", () => {
@@ -36,7 +37,7 @@ test("a cut that cannot be paid does not dig, and a paid cut spends both batteri
   const crust = createCrust();
   const stocks = createStocks();
   const hash = crustHash(crust);
-  const unpaid = commitPoweredCut(crust, crust, stocks, stocks, 1, 2);
+  const unpaid = commitPoweredCut(crust, crust, stocks, stocks, CRADLE_CELL.ix, CRADLE_CELL.iy);
   assert.equal(unpaid.accepted, false);
   assert.match(unpaid.reason, /battery cannot pay/);
   assert.equal(unpaid.a, crust);
@@ -47,12 +48,12 @@ test("a cut that cannot be paid does not dig, and a paid cut spends both batteri
   bank = credit(bank, arrayKwh(world));
   world = step(world, { fileStorm: true });
   bank = credit(bank, arrayKwh(world));
-  const paid = commitPoweredCut(crust, crust, bank, bank, 1, 2);
+  const paid = commitPoweredCut(crust, crust, bank, bank, CRADLE_CELL.ix, CRADLE_CELL.iy);
   assert.equal(paid.accepted, true);
   assert.equal(paid.aStocks.batteryKwh, bank.batteryKwh - CUT_KWH);
   assert.equal(paid.bStocks.batteryKwh, paid.aStocks.batteryKwh);
   assert.equal(crustHash(paid.a), crustHash(paid.b));
-  const again = commitPoweredCut(paid.a, paid.b, paid.aStocks, paid.bStocks, 3, 4);
+  const again = commitPoweredCut(paid.a, paid.b, paid.aStocks, paid.bStocks, CRADLE_CELL.ix, CRADLE_CELL.iy);
   assert.equal(again.accepted, false);
   assert.match(again.reason, /yard cannot hold|battery cannot pay/);
   assert.equal(again.a, paid.a);
@@ -60,10 +61,10 @@ test("a cut that cannot be paid does not dig, and a paid cut spends both batteri
 });
 
 test("a cut under a roof is refused for both clients", () => {
-  const crust = setFlag(createCrust(), 1, 2, "roof", 1);
+  const crust = setFlag(createCrust(), CRADLE_CELL.ix, CRADLE_CELL.iy, "roof", 1);
   const stocks = { ...createStocks(), batteryKwh: CUT_KWH };
   const hash = crustHash(crust);
-  const cut = commitPoweredCut(crust, crust, stocks, stocks, 1, 2);
+  const cut = commitPoweredCut(crust, crust, stocks, stocks, CRADLE_CELL.ix, CRADLE_CELL.iy);
   assert.equal(cut.accepted, false);
   assert.match(cut.reason, /vessel/);
   assert.equal(cut.aStocks.batteryKwh, CUT_KWH);
