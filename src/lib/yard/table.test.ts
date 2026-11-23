@@ -159,7 +159,7 @@ test("the cradle is the default seat, and works is a query", () => {
 
 test("a seal waits, and a table with the wrong hash is refused", () => {
   const aims = DEFAULT_AIMS.map((aim) => ({ ...aim }));
-  const start = { table: createTable(), split: false, waiting: false };
+  const start = { table: createTable(), split: false, waiting: false, log: [] };
   const sealed = reduceTable(start, { type: "seal", seat: "cradle", aims, sol: 0 });
   assert.equal(sealed.waiting, true);
   assert.equal(sealed.split, false);
@@ -180,7 +180,7 @@ test("a seal waits, and a table with the wrong hash is refused", () => {
 
 test("both seals close both yards one sol, in either order", () => {
   const aims = DEFAULT_AIMS.map((aim) => ({ ...aim, on: false }));
-  const start = { table: createTable(), split: false, waiting: false };
+  const start = { table: createTable(), split: false, waiting: false, log: [] };
   const one = reduceTable(start, { type: "seal", seat: "cradle", aims, sol: 0 });
   assert.equal(one.table.climate.sol, 0);
   const two = reduceTable(one, { type: "seal", seat: "works", aims, sol: 0 });
@@ -274,7 +274,7 @@ test("a bad table is named, and it is not applied", () => {
   assert.equal(splitLine(false), null);
   assert.equal(splitLine(true), "HASH SPLIT. This window did not take that table.");
   const sealed = reduceTable(
-    { table: createTable(), split: false, waiting: false },
+    { table: createTable(), split: false, waiting: false, log: [] },
     { type: "seal", seat: "cradle", aims: DEFAULT_AIMS.map((aim) => ({ ...aim })), sol: 0 },
   );
   const lied = reduceTable(sealed, { type: "table", table: createTable(), hash: "nope" });

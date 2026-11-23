@@ -196,7 +196,7 @@ function applySols(p: Pair, sols: number, aims: readonly Aim[], selected: number
 
 function applyList(p: Pair, aims: readonly Aim[], selected: number): Pair {
   const worked = workList(toYard(p), aims, siteFrom(p, selected));
-  return { ...worked.yard, log: worked.landed.length ? worked.landed : ["The list spent nothing."] };
+  return { ...worked.yard, log: worked.landed.length ? worked.landed : ["The list spent nothing."], halt: p.halt };
 }
 
 function formatKg(kg: bigint): string {
