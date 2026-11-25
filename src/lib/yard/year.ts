@@ -15,3 +15,11 @@ export function circuits(sol: number, start = 0): number {
   if (sol <= start) return 0;
   return Math.floor((sol - start) / SOLS_PER_YEAR);
 }
+
+/** The board says the longitude, not a year number. */
+export function yearLine(sol: number, start = 0): string {
+  const n = circuits(sol, start);
+  if (n < 1) return "Ls has not come back around.";
+  if (n === 1) return "Ls has come back around.";
+  return `Ls has come back around ${n} times.`;
+}
