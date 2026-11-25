@@ -32,6 +32,19 @@ export type ReleaseResult = {
   tauMilli: number;
 };
 
+/** A cell already carrying lofted fines. The storm's dust is not this field. */
+export function loftClaimed(world: World, index: number): boolean {
+  return world.tauAerMilli[index] > 0;
+}
+
+/** One loft on the climate. A second cell does not get a second veil. */
+export function loftAnywhere(world: World): boolean {
+  for (let i = 0; i < world.tauAerMilli.length; i++) {
+    if (world.tauAerMilli[i] > 0) return true;
+  }
+  return false;
+}
+
 export function commitRelease(
   a: World,
   b: World,
