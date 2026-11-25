@@ -4,6 +4,7 @@ import { airKg, createWorld, siteIndex, stateHash } from "../climate/model.ts";
 import { createCrust } from "../crust/crust.ts";
 import { turnHash } from "../turn.ts";
 import { CRADLE_CELL, commitCable } from "./cable.ts";
+import { DEFAULT_AIMS, workList, type Yard } from "./governor.ts";
 import { centerKm, climateIndexOfKm, focusOn, siteAt, stepKm } from "./km.ts";
 import { CUT_KWH, commitPoweredCut, createStocks } from "./power.ts";
 import { ROOF_FINES_KG, ROOF_KWH, commitRoof } from "./roof.ts";
@@ -130,6 +131,30 @@ test("a roof on the neighbor spends these stocks and does not move the cell", ()
   assert.equal(stateHash(world), hash);
   assert.equal(climateIndexOfKm(east.ix, east.iy), climateIndexOfKm(CRADLE_CELL.ix, CRADLE_CELL.iy));
 });
+
+test("the list shelters the kilometer the cursor is on", () => {
+  const world = createWorld();
+  const east = stepKm(CRADLE_CELL.ix, CRADLE_CELL.iy, "e");
+  assert.ok(east);
+  const site = siteAt(world, east.ix, east.iy);
+  const stocks = { ...createStocks(), finesKg: ROOF_FINES_KG, batteryKwh: ROOF_KWH };
+  const yard: Yard = {
+    canon: world,
+    witness: createWorld(),
+    canonCrust: createCrust(),
+    witnessCrust: createCrust(),
+    canonStocks: stocks,
+    witnessStocks: { ...stocks },
+  };
+  const aims = DEFAULT_AIMS.map((aim) => ({ ...aim, on: aim.id === "shelter" }));
+  const worked = workList(yard, aims, site);
+  assert.ok(worked.landed.some((line) => line.startsWith("roof up")));
+  assert.equal(worked.yard.canonCrust.overrides[0].ix, east.ix);
+  assert.equal(worked.yard.witnessCrust.overrides[0].ix, east.ix);
+  assert.notEqual(east.ix, CRADLE_CELL.ix);
+  assert.equal(worked.yard.canon.sol, 0);
+});
+
 
 
 
