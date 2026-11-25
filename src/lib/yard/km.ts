@@ -1,5 +1,7 @@
 import { cellIndex, cellLat, cellLon, latIndexOf, lonIndexOf } from "../climate/constants.ts";
+import { surveyPressure, type World } from "../climate/model.ts";
 import { COLS, ROWS, cellCenter, cellOf } from "../crust/crust.ts";
+import { type WorkSite } from "./governor.ts";
 
 export type Dir = "n" | "e" | "s" | "w";
 
@@ -20,3 +22,17 @@ export function stepKm(ix: number, iy: number, dir: Dir): { ix: number; iy: numb
   if (x < 0 || y < 0 || x >= COLS || y >= ROWS) return null;
   return { ix: x, iy: y };
 }
+
+/** The kilometer the former is standing on. Pressure is the climate cell's, not a new atmosphere. */
+export function siteAt(world: World, ix: number, iy: number): WorkSite {
+  const index = climateIndexOfKm(ix, iy);
+  const at = cellCenter(ix, iy);
+  return {
+    ix,
+    iy,
+    pressurePa: Math.round(surveyPressure(world.zM[index])),
+    climateIndex: index,
+    latDeg: at.lat,
+  };
+}
+
