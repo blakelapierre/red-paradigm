@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { SOLS_PER_YEAR } from "../climate/constants.ts";
-import { circuits, lsAround, lsTraveled, yearLine } from "./year.ts";
+import { TURN_SOLS, circuits, lsAround, lsTraveled, turnsPast, yearLine } from "./year.ts";
 
 test("Ls comes back around from 668.6, not from a stored 669", () => {
   const short = Math.floor(SOLS_PER_YEAR);
@@ -26,4 +26,14 @@ test("the sentence is the longitude, not a year count", () => {
   assert.equal(yearLine(first + Math.ceil(SOLS_PER_YEAR)), "Ls has come back around 2 times.");
   assert.equal(yearLine(first).includes("669"), false);
 });
+
+test("a turn is 28 sols, and twenty-four turns are not a year", () => {
+  assert.equal(TURN_SOLS, 28);
+  assert.equal(turnsPast(23), false);
+  assert.equal(lsAround(0, 23 * TURN_SOLS), false);
+  assert.equal(turnsPast(24), true);
+  assert.notEqual(24 * TURN_SOLS, SOLS_PER_YEAR);
+  assert.equal(lsAround(0, TURN_SOLS), false);
+});
+
 

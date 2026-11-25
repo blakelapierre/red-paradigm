@@ -1,5 +1,8 @@
 import { SOLS_PER_YEAR } from "../climate/constants.ts";
 
+/** One turn. From the clock, not a tuning knob. */
+export const TURN_SOLS = 28;
+
 /** Degrees of solar longitude between two sols. The year is 668.6, not an integer. */
 export function lsTraveled(fromSol: number, toSol: number): number {
   return (toSol - fromSol) * (360 / SOLS_PER_YEAR);
@@ -23,3 +26,9 @@ export function yearLine(sol: number, start = 0): string {
   if (n === 1) return "Ls has come back around.";
   return `Ls has come back around ${n} times.`;
 }
+
+/** Twenty-four turns pass the longitude and are still not a year. */
+export function turnsPast(turns: number): boolean {
+  return turns * TURN_SOLS >= SOLS_PER_YEAR;
+}
+
