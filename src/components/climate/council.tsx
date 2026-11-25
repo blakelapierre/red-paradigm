@@ -80,13 +80,20 @@ import { LAMP_BED_KWH, LAMP_G, commitLamp } from "@/lib/yard/lamp";
 import { BED_CAP, commitPlant } from "@/lib/yard/bed";
 import { HELD_MARK, holdGapLine, kilometerHolds, stormLine } from "@/lib/yard/hold";
 import { vesselLines } from "@/lib/yard/status";
-import { focusOn, siteAt, stepKm, climateIndexOfKm, type Dir, type Focus } from "@/lib/yard/km";
+import { focusOn, siteAt, stepKm, climateIndexOfKm, centerKm, type Dir, type Focus } from "@/lib/yard/km";
 import { TURN_SOLS, yearLine } from "@/lib/yard/year";
 import { roofCount, sharedRoofWarning } from "@/lib/yard/bill";
 import { commitCable } from "@/lib/yard/cable";
 import { commitMeter } from "@/lib/yard/meter";
 import { commitPaint } from "@/lib/yard/paint";
 import { commitRelease } from "@/lib/yard/release";
+import { homeNeighbor } from "@/lib/yard/claim";
+import { blocksStorm, callOpen, stormCallLine, takeCall, type StormCall } from "@/lib/yard/session";
+import { peaceLine } from "@/lib/yard/peace";
+import { commitSeed } from "@/lib/yard/seed";
+import { FACTION_NAME, packageStocks, type FactionId } from "@/lib/yard/faction";
+import { learnTech, type LearnId } from "@/lib/yard/tech";
+import { seasonPayLine } from "@/lib/yard/season";
 import {
   arrayKwh,
   commitPoweredCut,
@@ -182,14 +189,23 @@ function siteFrom(p: Pair, focus: Focus) {
   return siteAt(p.canon, focus.ix, focus.iy);
 }
 
-function applySols(p: Pair, sols: number, aims: readonly Aim[], focus: Focus, follow: boolean): Pair {
-  const result = bankSols(toYard(p), sols, aims, siteFrom(p, focus), follow);
-  const log = !follow ? p.log : result.landed.length ? result.landed.slice(-8) : ["The list spent nothing."];
-  return { ...result.yard, log, halt: follow ? result.quiet || result.holds : result.holds };
+function applySols(
+  p: Pair,
+  sols: number,
+  aims: readonly Aim[],
+  focus: Focus,
+  follow: boolean,
+  call: StormCall | null,
+  who: SeatId,
+): Pair {
+  const result = bankSols(toYard(p), sols, aims, siteFrom(p, focus), follow, call, homeNeighbor(p.canon, who));
+  const paused = blocksStorm(result.yard.canon.sol, call);
+  const log = result.landed.length ? result.landed.slice(-8) : !follow ? p.log : ["The list spent nothing."];
+  return { ...result.yard, log, halt: (follow ? result.quiet || result.holds : result.holds) || paused };
 }
 
-function applyList(p: Pair, aims: readonly Aim[], focus: Focus): Pair {
-  const worked = workList(toYard(p), aims, siteFrom(p, focus));
+function applyList(p: Pair, aims: readonly Aim[], focus: Focus, call: StormCall | null, who: SeatId): Pair {
+  const worked = workList(toYard(p), aims, siteFrom(p, focus), call, homeNeighbor(p.canon, who));
   return { ...worked.yard, log: worked.landed.length ? worked.landed : ["The list spent nothing."], halt: p.halt };
 }
 
@@ -241,6 +257,7 @@ export function Council() {
   const [follow, setFollow] = useState(true);
   const [tableOn, setTableOn] = useState(false);
   const [seat, setSeat] = useState<SeatId>("cradle");
+  const [call, setCall] = useState<StormCall | null>(null);
   const [tableState, setTableState] = useState<TableState | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -249,6 +266,7 @@ export function Council() {
   const focusRef = useRef(focus);
   const tableOnRef = useRef(tableOn);
   const seatRef = useRef(seat);
+  const callRef = useRef(call);
   const pairRef = useRef(pair);
   const soloRef = useRef<Pair | null>(null);
   const soloAimsRef = useRef<Aim[] | null>(null);
@@ -258,6 +276,7 @@ export function Council() {
   focusRef.current = focus;
   tableOnRef.current = tableOn;
   seatRef.current = seat;
+  callRef.current = call;
   pairRef.current = pair;
 
   const sealFromRef = useRef<(p: Pair) => void>(() => {});
@@ -267,7 +286,7 @@ export function Council() {
     setTableState((prev) => {
       const base = prev ?? { table: createTable(), split: false, waiting: false, log: [] };
       const withSeat = writeSeat(base.table, who, p);
-      const msg: SealMsg = { type: "seal", seat: who, aims: aimsNow, sol: withSeat.climate.sol };
+      const msg: SealMsg = { type: "seal", seat: who, aims: aimsNow, sol: withSeat.climate.sol, call: callRef.current };
       rememberSeal(msg);
       channelRef.current?.postMessage(msg);
       return reduceTable({ ...base, table: withSeat }, msg);
@@ -311,7 +330,7 @@ export function Council() {
       if (acc >= 0.4) {
         acc = 0;
         if (tableOnRef.current) sealFromRef.current(pairRef.current);
-        else setPair((p) => applySols(p, 1, aimsRef.current, focusRef.current, followRef.current));
+        else setPair((p) => applySols(p, 1, aimsRef.current, focusRef.current, followRef.current, callRef.current, seatRef.current));
       }
       raf = requestAnimationFrame(loop);
     };
@@ -352,6 +371,7 @@ export function Council() {
       const next = pairFrom(tableState.table, seat, p);
       return tableState.log.length ? { ...next, log: tableState.log.slice(-8) } : next;
     });
+    setCall(tableState.table[seat].call);
   }, [tableOn, tableState, seat]);
 
   useEffect(() => {
@@ -364,7 +384,7 @@ export function Council() {
         sealFromRef.current(pairRef.current);
         return;
       }
-      setPair((p) => applySols(p, 1, aimsRef.current, focusRef.current, followRef.current));
+      setPair((p) => applySols(p, 1, aimsRef.current, focusRef.current, followRef.current, callRef.current, seatRef.current));
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -456,11 +476,63 @@ export function Council() {
       sealFromRef.current(pair);
       return;
     }
-    setPair((p) => applySols(p, sols, aims, focus, follow));
+    setPair((p) => applySols(p, sols, aims, focus, follow, call, seat));
   };
 
   const workNow = () => {
-    setPair((p) => applyList(p, aims, focus));
+    setPair((p) => applyList(p, aims, focus, call, seat));
+  };
+
+  const choose = (next: StormCall) => {
+    const taken = takeCall(callRef.current, next, pairRef.current.canon.sol, pairRef.current.canonStocks);
+    setCanonCut({ accepted: taken.accepted, reason: taken.reason });
+    setWitnessCut({ accepted: taken.accepted, reason: taken.reason });
+    if (taken.accepted && taken.call) setCall(taken.call);
+  };
+
+  const learn = (id: LearnId) => {
+    setPair((p) => {
+      const got = learnTech(p.canonStocks, p.witnessStocks, id);
+      setCanonCut({ accepted: got.accepted, reason: got.reason });
+      setWitnessCut({ accepted: got.accepted, reason: got.reason });
+      if (!got.accepted) return p;
+      return { ...p, canonStocks: got.a, witnessStocks: got.b };
+    });
+  };
+
+  const takeFaction = (id: FactionId) => {
+    setPair((p) => {
+      const freshStart = p.canon.sol === 0 && p.canonStocks.batteryKwh === 0 && p.canonStocks.reactor === 0 && p.canonStocks.finesKg === 0n;
+      if (!freshStart) {
+        setCanonCut({ accepted: false, reason: "the package is only the start" });
+        return p;
+      }
+      const stocks = packageStocks(id);
+      setCanonCut({ accepted: true, reason: `${FACTION_NAME[id]} is the package. It does not take a turn.` });
+      return { ...p, canonStocks: stocks, witnessStocks: { ...stocks } };
+    });
+  };
+
+  const sendSeed = () => {
+    setPair((p) => {
+      const otherGone =
+        tableOn && tableState
+          ? seat === "cradle"
+            ? tableState.table.works.stocks.seed === 1
+            : tableState.table.cradle.stocks.seed === 1
+          : false;
+      const sent = commitSeed(p.canonCrust, p.witnessCrust, p.canonStocks, p.witnessStocks, p.canon, otherGone);
+      setCanonCut({ accepted: sent.accepted, reason: sent.reason });
+      setWitnessCut({ accepted: sent.accepted, reason: sent.reason });
+      if (!sent.accepted) return p;
+      return { ...p, canonStocks: sent.a, witnessStocks: sent.b };
+    });
+  };
+
+  const openDatum = () => {
+    const at = centerKm(siteIndex("datum"));
+    setFocus(at);
+    setSelected(climateIndexOfKm(at.ix, at.iy));
   };
 
   const onCanvasClick = (event: MouseEvent<HTMLCanvasElement>) => {
@@ -547,6 +619,27 @@ export function Council() {
               {canonCut ? canonCut.reason : "No order yet. A refusal spends nothing, for both clients."}
             </p>
             <p className="mt-1 text-xs text-muted">{yearLine(world.sol)}</p>
+            <p className="mt-1 text-xs text-muted">{stormCallLine(world.sol)}</p>
+            <p className="mt-1 text-xs text-muted">{seasonPayLine(world, selected)}</p>
+            {callOpen(world.sol) && call === null ? (
+              <div className="mt-2 grid grid-cols-3 gap-2">
+                {(["loft", "bank", "neighbor"] as StormCall[]).map((next) => (
+                  <button
+                    key={next}
+                    type="button"
+                    className="min-h-11 rounded-sm border border-line px-2 text-sm text-fg"
+                    onClick={() => choose(next)}
+                  >
+                    {next === "loft" ? "Loft" : next === "bank" ? "Bank" : "Neighbor"}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-1 text-xs text-muted">{call ? `The call is ${call}.` : "The call is closed."}</p>
+            )}
+            {tableOn && tableState && peaceLine(tableState.table) ? (
+              <p className="mt-1 text-sm text-frost">{peaceLine(tableState.table)}</p>
+            ) : null}
             <p className="mt-1 text-xs text-muted">
               Both clients: {witnessCut ? witnessCut.reason : "no order yet"}
               {turnA === turnB ? " · AGREE" : " · HASH SPLIT"}
@@ -584,6 +677,34 @@ export function Council() {
                 )}
               </p>
             ) : null}
+            {pair.canonStocks.seed === 1 ? (
+              <p className="mt-1 text-sm text-frost">A seed mass has left. The yard is still holding. This is not a sky.</p>
+            ) : (
+              <button type="button" className="mt-2 min-h-11 text-left text-xs text-frost" onClick={sendSeed}>
+                Send the seed
+              </button>
+            )}
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button type="button" className="min-h-11 rounded-sm border border-line px-2 text-xs text-fg" onClick={() => learn("climate")}>
+                Learn climate
+              </button>
+              <button type="button" className="min-h-11 rounded-sm border border-line px-2 text-xs text-fg" onClick={() => learn("seed")}>
+                Learn the seed
+              </button>
+              <button type="button" className="min-h-11 rounded-sm border border-line px-2 text-xs text-fg" onClick={openDatum}>
+                The Datum
+              </button>
+              {(["industrial", "scientific", "final"] as FactionId[]).map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  className="min-h-11 rounded-sm border border-line px-2 text-xs text-fg"
+                  onClick={() => takeFaction(id)}
+                >
+                  {FACTION_NAME[id]}
+                </button>
+              ))}
+            </div>
             <button type="button" className="mt-2 min-h-11 text-left text-xs text-frost" onClick={() => setManual("What the list is doing")}>
               Open the field manual
             </button>
@@ -725,6 +846,7 @@ export function Council() {
                   setPair(fresh());
                   setSelected(siteIndex("cradle"));
                   setFocus(focusOn(siteIndex("cradle")));
+                  setCall(null);
                   setCanonCut(null);
                   setWitnessCut(null);
                 }}
