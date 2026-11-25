@@ -982,6 +982,7 @@ export function Council() {
             <p className="mt-1 font-mono text-xs text-muted">
               Kilometer {focus.ix}, {focus.iy}
             </p>
+            <p className="mt-1 text-xs text-muted">One step stays in this climate cell. The cursor is not hashed.</p>
             <div className="mt-2 grid grid-cols-4 gap-2">
               {(["n", "e", "s", "w"] as Dir[]).map((dir) => (
                 <button
