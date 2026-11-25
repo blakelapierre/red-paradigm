@@ -155,6 +155,18 @@ test("the list shelters the kilometer the cursor is on", () => {
   assert.equal(worked.yard.canon.sol, 0);
 });
 
+test("one step stays in the cell, and a far kilometer does not", () => {
+  const home = centerKm(siteIndex("cradle"));
+  const east = stepKm(home.ix, home.iy, "e");
+  assert.ok(east);
+  assert.equal(climateIndexOfKm(east.ix, east.iy), siteIndex("cradle"));
+  const far = { ix: home.ix + 2000, iy: home.iy };
+  assert.notEqual(climateIndexOfKm(far.ix, far.iy), siteIndex("cradle"));
+  const datum = focusOn(siteIndex("datum"));
+  assert.notEqual(climateIndexOfKm(datum.ix, datum.iy), siteIndex("cradle"));
+});
+
+
 
 
 
