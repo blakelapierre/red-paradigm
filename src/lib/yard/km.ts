@@ -5,6 +5,14 @@ import { type WorkSite } from "./governor.ts";
 
 export type Dir = "n" | "e" | "s" | "w";
 
+/** The kilometer the cursor is on. Not a stock, and not a climate cell. */
+export type Focus = { ix: number; iy: number };
+
+export function focusOn(climateIndex: number): Focus {
+  return centerKm(climateIndex);
+}
+
+
 /** The climate cell that contains this kilometer. One step is not a new cell. */
 export function climateIndexOfKm(ix: number, iy: number): number {
   const at = cellCenter(ix, iy);

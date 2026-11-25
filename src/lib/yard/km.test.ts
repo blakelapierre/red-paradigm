@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { airKg, createWorld, siteIndex, stateHash } from "../climate/model.ts";
 import { createCrust } from "../crust/crust.ts";
 import { CRADLE_CELL, commitCable } from "./cable.ts";
-import { centerKm, climateIndexOfKm, siteAt, stepKm } from "./km.ts";
+import { centerKm, climateIndexOfKm, focusOn, siteAt, stepKm } from "./km.ts";
 import { CUT_KWH, commitPoweredCut, createStocks } from "./power.ts";
 
 test("one kilometer east of the cradle center is still that climate cell", () => {
@@ -84,6 +84,19 @@ test("a second pit is refused while the yard still holds the first", () => {
   assert.equal(second.a.spoilKg, first.a.spoilKg);
   assert.equal(second.aStocks.batteryKwh, laid.a.batteryKwh);
 });
+
+test("pointing at a climate cell puts the cursor on that cell's center", () => {
+  const cradle = focusOn(siteIndex("cradle"));
+  const works = focusOn(siteIndex("works"));
+  assert.equal(cradle.ix, CRADLE_CELL.ix);
+  assert.notEqual(works.ix, cradle.ix);
+  assert.equal(climateIndexOfKm(works.ix, works.iy), siteIndex("works"));
+  const east = stepKm(works.ix, works.iy, "e");
+  assert.ok(east);
+  assert.equal(climateIndexOfKm(east.ix, east.iy), siteIndex("works"));
+  assert.notEqual(east.ix, works.ix);
+});
+
 
 
 
