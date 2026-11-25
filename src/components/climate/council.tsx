@@ -80,7 +80,7 @@ import { LAMP_BED_KWH, LAMP_G, commitLamp } from "@/lib/yard/lamp";
 import { BED_CAP, commitPlant } from "@/lib/yard/bed";
 import { HELD_MARK, holdGapLine, kilometerHolds, stormLine } from "@/lib/yard/hold";
 import { vesselLines } from "@/lib/yard/status";
-import { TURN_SOLS, yearLine } from "@/lib/yard/year";
+import { focusOn, siteAt, stepKm, climateIndexOfKm, type Dir, type Focus } from "@/lib/yard/km";
 import { roofCount, sharedRoofWarning } from "@/lib/yard/bill";
 import { commitCable } from "@/lib/yard/cable";
 import { commitMeter } from "@/lib/yard/meter";
@@ -177,26 +177,18 @@ function toYard(p: Pair): Yard {
   };
 }
 
-function siteFrom(p: Pair, selected: number) {
-  const view = inspect(p.canon, selected);
-  const at = cellOf(view.lat, view.lon);
-  return {
-    ix: at.ix,
-    iy: at.iy,
-    pressurePa: Math.round(surveyPressure(view.z)),
-    climateIndex: selected,
-    latDeg: view.lat,
-  };
+function siteFrom(p: Pair, focus: Focus) {
+  return siteAt(p.canon, focus.ix, focus.iy);
 }
 
-function applySols(p: Pair, sols: number, aims: readonly Aim[], selected: number, follow: boolean): Pair {
-  const result = bankSols(toYard(p), sols, aims, siteFrom(p, selected), follow);
+function applySols(p: Pair, sols: number, aims: readonly Aim[], focus: Focus, follow: boolean): Pair {
+  const result = bankSols(toYard(p), sols, aims, siteFrom(p, focus), follow);
   const log = !follow ? p.log : result.landed.length ? result.landed.slice(-8) : ["The list spent nothing."];
   return { ...result.yard, log, halt: follow ? result.quiet || result.holds : result.holds };
 }
 
-function applyList(p: Pair, aims: readonly Aim[], selected: number): Pair {
-  const worked = workList(toYard(p), aims, siteFrom(p, selected));
+function applyList(p: Pair, aims: readonly Aim[], focus: Focus): Pair {
+  const worked = workList(toYard(p), aims, siteFrom(p, focus));
   return { ...worked.yard, log: worked.landed.length ? worked.landed : ["The list spent nothing."], halt: p.halt };
 }
 
@@ -240,6 +232,7 @@ export function Council() {
   const [pair, setPair] = useState<Pair>(fresh);
   const [playing, setPlaying] = useState(false);
   const [selected, setSelected] = useState(() => siteIndex("cradle"));
+  const [focus, setFocus] = useState<Focus>(() => focusOn(siteIndex("cradle")));
   const [canonCut, setCanonCut] = useState<CutNote | null>(null);
   const [witnessCut, setWitnessCut] = useState<CutNote | null>(null);
   const [manual, setManual] = useState<string | null>(null);
@@ -252,7 +245,7 @@ export function Council() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const aimsRef = useRef(aims);
   const followRef = useRef(follow);
-  const selectedRef = useRef(selected);
+  const focusRef = useRef(focus);
   const tableOnRef = useRef(tableOn);
   const seatRef = useRef(seat);
   const pairRef = useRef(pair);
@@ -261,7 +254,7 @@ export function Council() {
   const channelRef = useRef<BroadcastChannel | null>(null);
   aimsRef.current = aims;
   followRef.current = follow;
-  selectedRef.current = selected;
+  focusRef.current = focus;
   tableOnRef.current = tableOn;
   seatRef.current = seat;
   pairRef.current = pair;
@@ -296,6 +289,7 @@ export function Council() {
     setTableState(state);
     setPair(pairFrom(state.table, who, pairRef.current));
     setSelected(siteIndex(who));
+    setFocus(focusOn(siteIndex(who)));
     if (who === "works") setAims(WORKS_AIMS.map((aim) => ({ ...aim })));
     setTableOn(true);
   };
@@ -316,7 +310,7 @@ export function Council() {
       if (acc >= 0.4) {
         acc = 0;
         if (tableOnRef.current) sealFromRef.current(pairRef.current);
-        else setPair((p) => applySols(p, 1, aimsRef.current, selectedRef.current, followRef.current));
+        else setPair((p) => applySols(p, 1, aimsRef.current, focusRef.current, followRef.current));
       }
       raf = requestAnimationFrame(loop);
     };
@@ -369,7 +363,7 @@ export function Council() {
         sealFromRef.current(pairRef.current);
         return;
       }
-      setPair((p) => applySols(p, 1, aimsRef.current, selectedRef.current, followRef.current));
+      setPair((p) => applySols(p, 1, aimsRef.current, focusRef.current, followRef.current));
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -461,11 +455,11 @@ export function Council() {
       sealFromRef.current(pair);
       return;
     }
-    setPair((p) => applySols(p, sols, aims, selected, follow));
+    setPair((p) => applySols(p, sols, aims, focus, follow));
   };
 
   const workNow = () => {
-    setPair((p) => applyList(p, aims, selected));
+    setPair((p) => applyList(p, aims, focus));
   };
 
   const onCanvasClick = (event: MouseEvent<HTMLCanvasElement>) => {
@@ -476,7 +470,9 @@ export function Council() {
     const lat = 90 - y * 180;
     const latIndex = Math.min(35, Math.max(0, Math.floor((90 - lat) / 5)));
     const lonIndex = Math.min(71, Math.max(0, Math.floor(lon / 5)));
-    setSelected(latIndex * LON_COLS + lonIndex);
+    const index = latIndex * LON_COLS + lonIndex;
+    setSelected(index);
+    setFocus(focusOn(index));
   };
 
   return (
@@ -727,6 +723,7 @@ export function Council() {
                   setTableState(null);
                   setPair(fresh());
                   setSelected(siteIndex("cradle"));
+                  setFocus(focusOn(siteIndex("cradle")));
                   setCanonCut(null);
                   setWitnessCut(null);
                 }}
@@ -742,8 +739,8 @@ export function Council() {
 
           <Former
             seedZm={view.z}
-            lat={view.lat}
-            lon={view.lon}
+            lat={cellCenter(focus.ix, focus.iy).lat}
+            lon={cellCenter(focus.ix, focus.iy).lon}
             canon={pair.canonCrust}
             witness={pair.witnessCrust}
             stocks={pair.canonStocks}
@@ -751,7 +748,7 @@ export function Council() {
             canonCut={canonCut}
             witnessCut={witnessCut}
             onDig={() => {
-              const at = cellOf(view.lat, view.lon);
+              const at = focus;
               const cut = commitPoweredCut(pair.canonCrust, pair.witnessCrust, pair.canonStocks, pair.witnessStocks, at.ix, at.iy);
               setCanonCut({ accepted: cut.accepted, reason: cut.reason });
               setWitnessCut({ accepted: cut.accepted, reason: cut.reason });
@@ -776,7 +773,7 @@ export function Council() {
               }));
             }}
             onDump={() => {
-              const at = cellOf(view.lat, view.lon);
+              const at = focus;
               const dumped = commitDump(pair.canonCrust, pair.witnessCrust, at.ix, at.iy);
               setCanonCut({ accepted: dumped.accepted, reason: dumped.reason });
               setWitnessCut({ accepted: dumped.accepted, reason: dumped.reason });
@@ -795,7 +792,7 @@ export function Council() {
               setPair((p) => ({ ...p, canonStocks: planted.a, witnessStocks: planted.b }));
             }}
             onCable={() => {
-              const at = cellOf(view.lat, view.lon);
+              const at = focus;
               const laid = commitCable(pair.canonStocks, pair.witnessStocks, at.ix, at.iy, tableOn ? seat : "cradle");
               setCanonCut({ accepted: laid.accepted, reason: laid.reason });
               setWitnessCut({ accepted: laid.accepted, reason: laid.reason });
@@ -808,7 +805,7 @@ export function Council() {
               setPair((p) => ({ ...p, canonStocks: metered.a, witnessStocks: metered.b }));
             }}
             onPaint={() => {
-              const at = cellOf(view.lat, view.lon);
+              const at = focus;
               const painted = commitPaint(pair.canonCrust, pair.witnessCrust, pair.canonStocks, pair.witnessStocks, at.ix, at.iy);
               setCanonCut({ accepted: painted.accepted, reason: painted.reason });
               setWitnessCut({ accepted: painted.accepted, reason: painted.reason });
@@ -867,7 +864,7 @@ export function Council() {
               setPair((p) => ({ ...p, canonStocks: washed.a, witnessStocks: washed.b }));
             }}
             onRoof={() => {
-              const at = cellOf(view.lat, view.lon);
+              const at = focus;
               const roofed = commitRoof(pair.canonCrust, pair.witnessCrust, pair.canonStocks, pair.witnessStocks, at.ix, at.iy);
               setCanonCut({ accepted: roofed.accepted, reason: roofed.reason });
               setWitnessCut({ accepted: roofed.accepted, reason: roofed.reason });
@@ -880,7 +877,7 @@ export function Council() {
               }));
             }}
             onRoad={() => {
-              const at = cellOf(view.lat, view.lon);
+              const at = focus;
               const laid = commitRoad(pair.canonCrust, pair.witnessCrust, pair.canonStocks, pair.witnessStocks, at.ix, at.iy);
               setCanonCut({ accepted: laid.accepted, reason: laid.reason });
               setWitnessCut({ accepted: laid.accepted, reason: laid.reason });
@@ -893,7 +890,7 @@ export function Council() {
               }));
             }}
             onBerm={() => {
-              const at = cellOf(view.lat, view.lon);
+              const at = focus;
               const built = commitBerm(pair.canonCrust, pair.witnessCrust, pair.canonStocks, pair.witnessStocks, at.ix, at.iy);
               setCanonCut({ accepted: built.accepted, reason: built.reason });
               setWitnessCut({ accepted: built.accepted, reason: built.reason });
@@ -955,7 +952,11 @@ export function Council() {
                   <li key={site.id}>
                     <button
                       type="button"
-                      onClick={() => setSelected(siteIndex(site.id))}
+                      onClick={() => {
+                        const index = siteIndex(site.id);
+                        setSelected(index);
+                        setFocus(focusOn(index));
+                      }}
                       className={`flex min-h-11 w-full items-center justify-between gap-3 border-t border-line px-1 text-left text-sm ${active ? "text-frost" : "text-fg"}`}
                     >
                       <span>
@@ -978,6 +979,26 @@ export function Council() {
             <p className="mt-1 font-mono text-xs text-muted">
               {view.lat.toFixed(1)}° · {view.lon.toFixed(1)}° · {view.z} m
             </p>
+            <p className="mt-1 font-mono text-xs text-muted">
+              Kilometer {focus.ix}, {focus.iy}
+            </p>
+            <div className="mt-2 grid grid-cols-4 gap-2">
+              {(["n", "e", "s", "w"] as Dir[]).map((dir) => (
+                <button
+                  key={dir}
+                  type="button"
+                  className="min-h-11 rounded-sm border border-line text-sm text-fg"
+                  onClick={() => {
+                    const next = stepKm(focus.ix, focus.iy, dir);
+                    if (!next) return;
+                    setFocus(next);
+                    setSelected(climateIndexOfKm(next.ix, next.iy));
+                  }}
+                >
+                  {dir.toUpperCase()}
+                </button>
+              ))}
+            </div>
             <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
               <div>
                 <dt className="text-xs text-muted">Live pressure</dt>
