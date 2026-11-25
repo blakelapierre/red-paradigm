@@ -81,6 +81,7 @@ import { BED_CAP, commitPlant } from "@/lib/yard/bed";
 import { HELD_MARK, holdGapLine, kilometerHolds, stormLine } from "@/lib/yard/hold";
 import { vesselLines } from "@/lib/yard/status";
 import { focusOn, siteAt, stepKm, climateIndexOfKm, type Dir, type Focus } from "@/lib/yard/km";
+import { TURN_SOLS, yearLine } from "@/lib/yard/year";
 import { roofCount, sharedRoofWarning } from "@/lib/yard/bill";
 import { commitCable } from "@/lib/yard/cable";
 import { commitMeter } from "@/lib/yard/meter";
