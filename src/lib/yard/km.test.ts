@@ -6,6 +6,7 @@ import { turnHash } from "../turn.ts";
 import { CRADLE_CELL, commitCable } from "./cable.ts";
 import { centerKm, climateIndexOfKm, focusOn, siteAt, stepKm } from "./km.ts";
 import { CUT_KWH, commitPoweredCut, createStocks } from "./power.ts";
+import { ROOF_FINES_KG, ROOF_KWH, commitRoof } from "./roof.ts";
 
 test("one kilometer east of the cradle center is still that climate cell", () => {
   const home = centerKm(siteIndex("cradle"));
@@ -109,6 +110,27 @@ test("stepping the cursor does not enter the turn hash", () => {
   assert.equal(turnHash(world, crust, stocks), before);
   assert.equal(world.sol, 0);
 });
+
+test("a roof on the neighbor spends these stocks and does not move the cell", () => {
+  const world = createWorld();
+  const before = airKg(world.ls);
+  const hash = stateHash(world);
+  const east = stepKm(CRADLE_CELL.ix, CRADLE_CELL.iy, "e");
+  assert.ok(east);
+  const stocks = { ...createStocks(), finesKg: ROOF_FINES_KG, batteryKwh: ROOF_KWH };
+  const roof = commitRoof(createCrust(), createCrust(), stocks, stocks, east.ix, east.iy);
+  assert.equal(roof.accepted, true);
+  assert.equal(roof.a.overrides[0].roof, 1);
+  assert.equal(roof.b.overrides[0].roof, 1);
+  assert.equal(roof.a.overrides[0].ix, east.ix);
+  assert.equal(roof.a.spoilKg, 0n);
+  assert.equal(roof.aStocks.finesKg, 0n);
+  assert.equal(roof.aStocks.batteryKwh, 0);
+  assert.equal(airKg(world.ls), before);
+  assert.equal(stateHash(world), hash);
+  assert.equal(climateIndexOfKm(east.ix, east.iy), climateIndexOfKm(CRADLE_CELL.ix, CRADLE_CELL.iy));
+});
+
 
 
 
