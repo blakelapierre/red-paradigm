@@ -80,7 +80,7 @@ import { LAMP_BED_KWH, LAMP_G, commitLamp } from "@/lib/yard/lamp";
 import { BED_CAP, commitPlant } from "@/lib/yard/bed";
 import { HELD_MARK, holdGapLine, kilometerHolds, stormLine } from "@/lib/yard/hold";
 import { vesselLines } from "@/lib/yard/status";
-import { TURN_SOLS } from "@/lib/yard/year";
+import { TURN_SOLS, yearLine } from "@/lib/yard/year";
 import { roofCount, sharedRoofWarning } from "@/lib/yard/bill";
 import { commitCable } from "@/lib/yard/cable";
 import { commitMeter } from "@/lib/yard/meter";
@@ -549,6 +549,7 @@ export function Council() {
             <p className={`mt-1 text-base font-medium ${canonCut ? (canonCut.accepted ? "text-frost" : "text-oxide") : "text-muted"}`}>
               {canonCut ? canonCut.reason : "No order yet. A refusal spends nothing, for both clients."}
             </p>
+            <p className="mt-1 text-xs text-muted">{yearLine(world.sol)}</p>
             <p className="mt-1 text-xs text-muted">
               Both clients: {witnessCut ? witnessCut.reason : "no order yet"}
               {turnA === turnB ? " · AGREE" : " · HASH SPLIT"}
