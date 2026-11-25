@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createWorld, siteIndex } from "../climate/model.ts";
+import { airKg, createWorld, siteIndex, stateHash } from "../climate/model.ts";
 import { createCrust } from "../crust/crust.ts";
-import { CRADLE_CELL } from "./cable.ts";
+import { CRADLE_CELL, commitCable } from "./cable.ts";
 import { centerKm, climateIndexOfKm, siteAt, stepKm } from "./km.ts";
 import { CUT_KWH, commitPoweredCut, createStocks } from "./power.ts";
 
@@ -44,5 +44,28 @@ test("a neighbor cut needs a line, and the refusal spends nothing", () => {
   assert.equal(cut.aStocks.batteryKwh, CUT_KWH);
   assert.notEqual(east.ix, CRADLE_CELL.ix);
 });
+
+test("a lined neighbor is cut for both clients, and the air mass stays", () => {
+  const world = createWorld();
+  const hash = stateHash(world);
+  const before = airKg(world.ls);
+  const home = centerKm(siteIndex("cradle"));
+  const east = stepKm(home.ix, home.iy, "e");
+  assert.ok(east);
+  const rich = { ...createStocks(), batteryKwh: CUT_KWH, finesKg: 1_000n };
+  const laid = commitCable(rich, rich, east.ix, east.iy);
+  assert.equal(laid.accepted, true);
+  const cut = commitPoweredCut(createCrust(), createCrust(), laid.a, laid.b, east.ix, east.iy);
+  assert.equal(cut.accepted, true);
+  assert.equal(cut.a.spoilKg, cut.b.spoilKg);
+  assert.ok(cut.a.spoilKg > 0n);
+  assert.equal(cut.a.overrides[0].ix, east.ix);
+  assert.equal(cut.aStocks.batteryKwh, 0);
+  assert.equal(cut.bStocks.batteryKwh, 0);
+  assert.equal(airKg(world.ls), before);
+  assert.equal(stateHash(world), hash);
+  assert.equal(climateIndexOfKm(east.ix, east.iy), siteIndex("cradle"));
+});
+
 
 
