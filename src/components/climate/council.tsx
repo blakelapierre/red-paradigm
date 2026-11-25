@@ -80,6 +80,7 @@ import { LAMP_BED_KWH, LAMP_G, commitLamp } from "@/lib/yard/lamp";
 import { BED_CAP, commitPlant } from "@/lib/yard/bed";
 import { HELD_MARK, holdGapLine, kilometerHolds, stormLine } from "@/lib/yard/hold";
 import { vesselLines } from "@/lib/yard/status";
+import { TURN_SOLS } from "@/lib/yard/year";
 import { roofCount, sharedRoofWarning } from "@/lib/yard/bill";
 import { commitCable } from "@/lib/yard/cable";
 import { commitMeter } from "@/lib/yard/meter";
@@ -704,6 +705,9 @@ export function Council() {
               </button>
               <button type="button" className="min-h-11 rounded-sm border border-line px-3 text-sm text-fg" onClick={() => advance(10)}>
                 Ten sols
+              </button>
+              <button type="button" className="min-h-11 rounded-sm border border-line px-3 text-sm text-fg" onClick={() => advance(TURN_SOLS)}>
+                One turn
               </button>
               <button
                 type="button"
