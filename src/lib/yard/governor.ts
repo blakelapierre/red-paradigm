@@ -19,13 +19,14 @@ import { commitMill } from "./mill.ts";
 import { commitPaint } from "./paint.ts";
 import { closeSol, commitPoweredCut, type Stocks } from "./power.ts";
 import { commitRadiator } from "./radiator.ts";
-import { commitRelease } from "./release.ts";
+import { commitRelease, loftAnywhere } from "./release.ts";
 import { commitRoad } from "./road.ts";
 import { commitRoof } from "./roof.ts";
 import { commitSabatier } from "./sabatier.ts";
 import { commitVent } from "./vent.ts";
 import { commitWash } from "./wash.ts";
 import { cradleHolding, kilometerHolds } from "./hold.ts";
+import { blocksStorm, listMayVeil, type StormCall } from "./session.ts";
 
 /** A general aim. The buttons still issue one order. The list is not a second physics. */
 export type AimId = "power" | "cut" | "mill" | "shelter" | "ration" | "water" | "fuel" | "column" | "veil" | "ground" | "array";
@@ -153,6 +154,9 @@ function runAim(yard: Yard, id: AimId, site: WorkSite, landed: string[]): Yard {
   }
   if (id === "column") return takeStocks(yard, commitCondenser(yard.canonStocks, yard.witnessStocks, yard.canon), landed);
   if (id === "veil") {
+    if (yard.canonStocks.techClimate !== 1 || yard.witnessStocks.techClimate !== 1) return yard;
+    if (yard.canonStocks.weather === 1 || yard.witnessStocks.weather === 1) return yard;
+    if (loftAnywhere(yard.canon) || loftAnywhere(yard.witness)) return yard;
     const released = commitRelease(
       yard.canon,
       yard.witness,
@@ -167,8 +171,8 @@ function runAim(yard: Yard, id: AimId, site: WorkSite, landed: string[]): Yard {
       ...yard,
       canon: released.a,
       witness: released.b,
-      canonStocks: released.aStocks,
-      witnessStocks: released.bStocks,
+      canonStocks: { ...released.aStocks, weather: 1 },
+      witnessStocks: { ...released.bStocks, weather: 1 },
     };
   }
   if (id === "ground") {
@@ -195,18 +199,29 @@ function runAim(yard: Yard, id: AimId, site: WorkSite, landed: string[]): Yard {
   return yard;
 }
 
-/** One pass. An aim that is off is skipped. A refusal spends nothing and does not stop the next aim. Once both floors are in, the list does not cut, mill, or loft. */
+/** One pass. An aim that is off is skipped. A refusal spends nothing and does not stop the next aim. Once both floors are in, the list does not cut, mill, or loft. A storm call, when passed, is the only way the list lofts. */
 export function workList(
   yard: Yard,
   aims: readonly Aim[],
   site: WorkSite,
+  call?: StormCall | null,
+  neighbor?: WorkSite | null,
 ): { yard: Yard; landed: string[] } {
   const landed: string[] = [];
   let next = yard;
+  if (call === "loft") next = runAim(next, "veil", site, landed);
+  if (call === "neighbor" && neighbor) {
+    next = takeCrust(
+      next,
+      commitRoof(next.canonCrust, next.witnessCrust, next.canonStocks, next.witnessStocks, neighbor.ix, neighbor.iy),
+      landed,
+    );
+  }
   const floored =
     floorReady(yard.canonCrust, yard.canonStocks) && floorReady(yard.witnessCrust, yard.witnessStocks);
   const holding = cradleHolding(yard.canonCrust, yard.canonStocks) && cradleHolding(yard.witnessCrust, yard.witnessStocks);
   for (const aim of passAims(aims, holding)) {
+    if (aim.id === "veil" && (call === "loft" || !listMayVeil(call))) continue;
     if (floored && (aim.id === "cut" || aim.id === "mill" || aim.id === "veil")) continue;
     next = runAim(next, aim.id, site, landed);
   }
@@ -247,12 +262,18 @@ export function bankSols(
   aims: readonly Aim[],
   site: WorkSite,
   follow: boolean,
+  call?: StormCall | null,
+  neighbor?: WorkSite | null,
 ): { yard: Yard; landed: string[]; quiet: boolean; holds: boolean } {
   let next = yard;
   const landed: string[] = [];
   const steps = Math.max(0, Math.floor(sols));
   let quiet = false;
   for (let i = 0; i < steps; i++) {
+    if (blocksStorm(next.canon.sol, call)) {
+      landed.push("The storm is filed next. The call is open.");
+      return { yard: next, landed, quiet: false, holds: false };
+    }
     const canon = closeSol(next.canon, next.canonStocks, next.canonCrust);
     const witness = closeSol(next.witness, next.witnessStocks, next.witnessCrust);
     next = {
@@ -267,7 +288,7 @@ export function bankSols(
       return { yard: next, landed, quiet: false, holds: true };
     }
     if (!follow) continue;
-    const worked = workList(next, aims, site);
+    const worked = workList(next, aims, site, call, neighbor);
     next = worked.yard;
     landed.push(...worked.landed);
     if (worked.landed.length === 0) {

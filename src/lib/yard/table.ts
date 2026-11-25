@@ -3,9 +3,11 @@ import { sha256, toHex } from "../climate/hash.ts";
 import { createWorld, siteIndex, step, stormTau, surveyPressure, type World } from "../climate/model.ts";
 import { cellOf, createCrust, type Crust } from "../crust/crust.ts";
 import { turnHash } from "../turn.ts";
+import { homeNeighbor } from "./claim.ts";
 import { DEFAULT_AIMS, workList, type Aim, type WorkSite, type Yard } from "./governor.ts";
 import { cradleHolding, kilometerHolds } from "./hold.ts";
 import { createStocks, liveSol, type Stocks } from "./power.ts";
+import { type StormCall } from "./session.ts";
 
 /** One window is one yard. The other yard is another window, not a second seat here. */
 export type SeatId = "cradle" | "works";
@@ -17,6 +19,8 @@ export type SeatYard = {
   witnessStocks: Stocks;
   aims: Aim[];
   sealedSol: number | null;
+  /** This yard's storm call. Null until they choose. Not the other yard's warehouse. */
+  call: StormCall | null;
 };
 
 /** One climate, two yards. Each yard keeps its own witness of the stocks and the crust. */
@@ -43,6 +47,7 @@ function freshSeat(seed: Stocks = createStocks(), aims: readonly Aim[] = DEFAULT
     witnessStocks: { ...seed },
     aims: aims.map((aim) => ({ ...aim })),
     sealedSol: null,
+    call: null,
   };
 }
 
@@ -106,11 +111,11 @@ export function closeTable(table: Table): Table {
   };
 }
 
-export function sealSeat(table: Table, seat: SeatId, aims: readonly Aim[]): Table {
+export function sealSeat(table: Table, seat: SeatId, aims: readonly Aim[], call: StormCall | null = table[seat].call): Table {
   const row = table[seat];
   return {
     ...table,
-    [seat]: { ...row, aims: aims.map((aim) => ({ ...aim })), sealedSol: table.climate.sol },
+    [seat]: { ...row, aims: aims.map((aim) => ({ ...aim })), sealedSol: table.climate.sol, call },
   };
 }
 
@@ -140,7 +145,7 @@ export function runSeat(table: Table, seat: SeatId, site: WorkSite = seatSite(ta
     canonStocks: row.stocks,
     witnessStocks: row.witnessStocks,
   };
-  const worked = workList(yard, row.aims, site);
+  const worked = workList(yard, row.aims, site, row.call, homeNeighbor(table.climate, seat));
   return {
     landed: worked.landed,
     table: {
@@ -166,11 +171,12 @@ export function tableHash(table: Table): string {
     turnHash(table.witness, table.cradle.witnessCrust, table.cradle.witnessStocks),
     turnHash(table.climate, table.works.crust, table.works.stocks),
     turnHash(table.witness, table.works.witnessCrust, table.works.witnessStocks),
+    `call:${table.cradle.call ?? "none"}:${table.works.call ?? "none"}`,
   ].join("\n");
   return toHex(sha256(new TextEncoder().encode(lines)));
 }
 
-export type SealMsg = { type: "seal"; seat: SeatId; aims: Aim[]; sol: number };
+export type SealMsg = { type: "seal"; seat: SeatId; aims: Aim[]; sol: number; call?: StormCall | null };
 
 export type TableMsg = SealMsg | { type: "table"; table: Table; hash: string };
 
@@ -183,7 +189,7 @@ export function reduceTable(state: TableState, msg: TableMsg): TableState {
     return { table: msg.table, split: false, waiting: !bothSealed(msg.table), log: state.log };
   }
   if (msg.sol !== state.table.climate.sol) return state;
-  const sealed = sealSeat(state.table, msg.seat, msg.aims);
+  const sealed = sealSeat(state.table, msg.seat, msg.aims, msg.call ?? state.table[msg.seat].call);
   if (!bothSealed(sealed)) return { table: sealed, split: false, waiting: true, log: state.log };
   const closed = closeTable(sealed);
   const cradle = runSeat(closed, "cradle");
@@ -210,6 +216,11 @@ export type PublicFace = {
   works: FaceBit;
   cradleThrough: boolean;
   worksThrough: boolean;
+  /** Who holds the one loft. Not their fines. */
+  weather: "cradle" | "works" | "none";
+  lofted: boolean;
+  /** A seed has left. Not how much methane is left. */
+  seedAway: boolean;
 };
 
 /** Held or dark. Not the warehouse. */
@@ -219,6 +230,9 @@ export function faceBit(crust: Crust, stocks: Stocks): FaceBit {
 }
 
 export function publicFace(table: Table): PublicFace {
+  const cradleIx = siteIndex("cradle");
+  const worksIx = siteIndex("works");
+  const weather = table.cradle.stocks.weather === 1 ? "cradle" : table.works.stocks.weather === 1 ? "works" : "none";
   return {
     sol: table.climate.sol,
     ls: table.climate.ls,
@@ -227,6 +241,9 @@ export function publicFace(table: Table): PublicFace {
     works: faceBit(table.works.crust, table.works.stocks),
     cradleThrough: table.cradle.stocks.stormHeld === 1,
     worksThrough: table.works.stocks.stormHeld === 1,
+    weather,
+    lofted: table.climate.tauAerMilli[cradleIx] > 0 || table.climate.tauAerMilli[worksIx] > 0,
+    seedAway: table.cradle.stocks.seed === 1 || table.works.stocks.seed === 1,
   };
 }
 

@@ -101,10 +101,11 @@ test("the public face is held or dark, not the warehouse", () => {
 test("a loft writes the shared climate for both copies, or for neither", () => {
   const table = createTable();
   const site = seatSite(table.climate, "cradle");
-  const rich = { ...table.cradle.stocks, finesKg: MILL_FINES_KG, batteryKwh: LOFT_KWH };
+  const rich = { ...table.cradle.stocks, finesKg: MILL_FINES_KG, batteryKwh: LOFT_KWH, techClimate: 1 };
   table.cradle.stocks = rich;
   table.cradle.witnessStocks = { ...rich };
   table.cradle.aims = DEFAULT_AIMS.map((aim) => ({ ...aim, on: aim.id === "veil" }));
+  table.cradle.call = "loft";
   const ran = runSeat(table, "cradle", site);
   assert.ok(ran.table.climate.tauAerMilli[site.climateIndex] > 0);
   assert.equal(ran.table.climate.tauAerMilli[site.climateIndex], ran.table.witness.tauAerMilli[site.climateIndex]);
@@ -118,6 +119,7 @@ test("a loft writes the shared climate for both copies, or for neither", () => {
   capped.cradle.stocks = { ...rich };
   capped.cradle.witnessStocks = { ...rich };
   capped.cradle.aims = table.cradle.aims;
+  capped.cradle.call = "loft";
   const heldBack = runSeat(capped, "cradle", site);
   assert.equal(heldBack.table.climate.tauAerMilli[site.climateIndex], 0);
   assert.equal(heldBack.table.cradle.stocks.finesKg, MILL_FINES_KG);
