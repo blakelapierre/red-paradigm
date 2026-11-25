@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { airKg, createWorld, siteIndex, stateHash } from "../climate/model.ts";
 import { createCrust } from "../crust/crust.ts";
+import { turnHash } from "../turn.ts";
 import { CRADLE_CELL, commitCable } from "./cable.ts";
 import { centerKm, climateIndexOfKm, focusOn, siteAt, stepKm } from "./km.ts";
 import { CUT_KWH, commitPoweredCut, createStocks } from "./power.ts";
@@ -96,6 +97,19 @@ test("pointing at a climate cell puts the cursor on that cell's center", () => {
   assert.equal(climateIndexOfKm(east.ix, east.iy), siteIndex("works"));
   assert.notEqual(east.ix, works.ix);
 });
+
+test("stepping the cursor does not enter the turn hash", () => {
+  const world = createWorld();
+  const crust = createCrust();
+  const stocks = createStocks();
+  const before = turnHash(world, crust, stocks);
+  const east = stepKm(CRADLE_CELL.ix, CRADLE_CELL.iy, "e");
+  assert.ok(east);
+  assert.notEqual(east.ix, CRADLE_CELL.ix);
+  assert.equal(turnHash(world, crust, stocks), before);
+  assert.equal(world.sol, 0);
+});
+
 
 
 
