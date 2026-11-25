@@ -3,9 +3,10 @@ import { test } from "node:test";
 import { bothSealed, closeIfSealed, closeTable, createTable, publicFace, reduceTable, replaySeals, runSeat, sealSeat, seatFromSearch, seatSite, splitLine, stormVerdict, tableHash, tableWanted, WORKS_AIMS, WORKS_FINES_KG } from "./table.ts";
 import { DEFAULT_AIMS } from "./governor.ts";
 import { CUT_KWH, closeSol, createStocks, stocksBytes } from "./power.ts";
-import { createWorld } from "../climate/model.ts";
+import { createWorld, siteIndex } from "../climate/model.ts";
 import { createCrust, setFlag } from "../crust/crust.ts";
 import { LOFT_KWH, TAU_CAP_MILLI } from "./release.ts";
+import { centerKm } from "./km.ts";
 import { MILL_FINES_KG } from "./mill.ts";
 
 test("a table is two yards and one climate", () => {
@@ -281,3 +282,18 @@ test("a bad table is named, and it is not applied", () => {
   assert.equal(splitLine(lied.split), "HASH SPLIT. This window did not take that table.");
   assert.equal(lied.table.cradle.sealedSol, 0);
 });
+
+test("at the table the list stays on the home kilometer", () => {
+  const table = createTable();
+  const home = centerKm(siteIndex("cradle"));
+  table.cradle.stocks = { ...table.cradle.stocks, batteryKwh: CUT_KWH };
+  table.cradle.witnessStocks = { ...table.cradle.witnessStocks, batteryKwh: CUT_KWH };
+  table.cradle.aims = DEFAULT_AIMS.map((aim) => ({ ...aim, on: aim.id === "cut" }));
+  const ran = runSeat(table, "cradle");
+  assert.equal(ran.table.cradle.crust.overrides.length, 1);
+  assert.equal(ran.table.cradle.crust.overrides[0].ix, home.ix);
+  assert.equal(ran.table.cradle.crust.overrides[0].iy, home.iy);
+  assert.equal(ran.table.works.crust.spoilKg, 0n);
+  assert.equal(seatSite(table.climate, "cradle").ix, home.ix);
+});
+
