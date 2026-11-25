@@ -68,5 +68,11 @@ test("the manual quotes the constants, not a second set of numbers", () => {
   const neighbor = entryByTitle("The next kilometer");
   assert.match(neighbor?.does ?? "", /One step stays in the climate cell/);
   assert.match(neighbor?.doesNot ?? "", /does not move a 5° climate cell/);
+  const call = entryByTitle("The storm call");
+  assert.match(call?.does ?? "", /The list does not choose/);
+  assert.match(entryByTitle("Peace")?.doesNot ?? "", /not a sky/);
+  assert.match(entryByTitle("The seed")?.doesNot ?? "", /not a sky/);
+  assert.match(entryByTitle("Who arrived")?.doesNot ?? "", /not an NPC/);
+  assert.match(entryByTitle("The Datum")?.doesNot ?? "", /not the Works/);
   assert.equal(MANUAL.some((entry) => /mars/i.test(`${entry.title} ${entry.does}`)), false);
 });

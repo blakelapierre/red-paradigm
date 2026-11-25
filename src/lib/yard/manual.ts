@@ -28,6 +28,7 @@ import { KILOPOWER_KWH } from "./kilopower.ts";
 import { BERM_FINES_KG } from "./berm.ts";
 import { BED_CAP, BED_FINES_KG, RATION_BED_FINES_KG } from "./bed.ts";
 import { HELD_MARK } from "./hold.ts";
+import { SEED_CH4_KG, SEED_O2_KG } from "./seed.ts";
 import { TURN_SOLS } from "./year.ts";
 import { LAMP_BED_KWH, LAMP_FINES_KG, LAMP_G } from "./lamp.ts";
 import { CABIN_LEAK_KG, CABIN_M3, CABIN_O2_KG, CABIN_O2_PA, METER_KWH } from "./meter.ts";
@@ -120,6 +121,69 @@ Both clients take an order, or neither does.`,
     "Nothing. The clock does not spend.",
     "Nothing.",
     "The board does not call 669 sols a year. A turn does not move a climate cell by itself. The air mass stays on solar longitude.",
+  ),
+  note(
+    "call",
+    "Start",
+    "The storm call",
+    `Before sol ${STORM_SOL} the yard chooses loft, bank, or the neighbor. The list does not choose. Loft is the one veil on the shared climate, and only after climate is known. Bank leaves the battery for the roof. The neighbor is one kilometer east of that yard's home. Run stops on the sol before the storm until the call is in. After the storm the score is one held, both held, or both dark.`,
+    "Loft costs the loft. The neighbor costs a roof. Bank spends nothing. The choice itself spends nothing.",
+    "A second call is refused. A loft after one is already on the climate is refused. Climate unknown, the loft is refused.",
+    "The call does not make breathable air. It does not move a 5° climate cell. The other yard sees the loft, not the warehouse. The Works is still the other yard.",
+  ),
+  note(
+    "peace",
+    "Start",
+    "Peace",
+    "Peace is both yards held through the storm, and neither home cell lofted. The cell was not pushed.",
+    "Nothing. It is a mark, not an order.",
+    "One dark yard, or one loft, and it is not peace.",
+    "Peace is not a sky. The air mass stays on solar longitude.",
+  ),
+  note(
+    "seed",
+    "Start",
+    "The seed",
+    `Ten Sabatier batches leave as ${commas(SEED_CH4_KG)} kg of methane and ${commas(SEED_O2_KG)} kg of oxygen. The yard has to be holding, and the seed has to be known. One seed on the planet. The yard is still holding.`,
+    `${commas(SEED_CH4_KG)} kg of methane and ${commas(SEED_O2_KG)} kg of oxygen. Learning it spends nothing.`,
+    "Short mass, a yard that is not holding, or a seed that has already left.",
+    "The seed does not make breathable air. It does not move the climate cell. This is not a sky.",
+  ),
+  note(
+    "factions",
+    "Start",
+    "Who arrived",
+    "Industrial, Scientific, and the final wave are starting packages. Industrial is the Works head start: a reactor and one mill of fines. Scientific starts with a collector. The final wave starts empty. All of them are on sol 0. None of them takes a turn.",
+    "Nothing. A package is not a discount.",
+    "After the first spend, the package is refused.",
+    "An earlier faction is not an NPC. It is not a second seat. It does not move the climate.",
+  ),
+  note(
+    "tech",
+    "Start",
+    "What is known",
+    "ISRU is known at the start. Climate unlocks the loft. The seed unlocks the departure. Both clients learn, or neither does.",
+    "Nothing. The order it unlocks still costs what it costs.",
+    "Climate before ISRU is refused. The seed before climate is refused.",
+    "Learning does not make breathable air, and it does not move a climate cell.",
+  ),
+  note(
+    "season",
+    "Start",
+    "The season",
+    "The season is already in the array. A later season pays a different integer of kWh. The roof bill does not change with it.",
+    "Whatever the array pays that sol. The roof bill stays the roof bill.",
+    "Nothing. The season is not an order.",
+    "The season does not make breathable air. It does not invent a second sun.",
+  ),
+  note(
+    "datum",
+    "Start",
+    "The Datum",
+    "The Datum is another climate cell on this yard's books. A roof there spends these fines and this battery. A line from the cradle array is the cable. The yard still holds one pit.",
+    "Whatever that order already costs.",
+    "No line, no cut. A full yard, no second pit.",
+    "The Datum is not the Works, and it is not a second warehouse. It does not move the air mass.",
   ),
   note(
     "neighbor",
