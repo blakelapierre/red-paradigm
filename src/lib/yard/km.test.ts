@@ -67,5 +67,24 @@ test("a lined neighbor is cut for both clients, and the air mass stays", () => {
   assert.equal(climateIndexOfKm(east.ix, east.iy), siteIndex("cradle"));
 });
 
+test("a second pit is refused while the yard still holds the first", () => {
+  const home = centerKm(siteIndex("cradle"));
+  const east = stepKm(home.ix, home.iy, "e");
+  assert.ok(east);
+  const rich = { ...createStocks(), batteryKwh: CUT_KWH, finesKg: 1_000n };
+  const first = commitPoweredCut(createCrust(), createCrust(), rich, rich, home.ix, home.iy);
+  assert.equal(first.accepted, true);
+  const paid = { ...first.aStocks, batteryKwh: CUT_KWH, finesKg: 1_000n };
+  const laid = commitCable(paid, { ...first.bStocks, batteryKwh: CUT_KWH, finesKg: 1_000n }, east.ix, east.iy);
+  assert.equal(laid.accepted, true);
+  const second = commitPoweredCut(first.a, first.b, laid.a, laid.b, east.ix, east.iy);
+  assert.equal(second.accepted, false);
+  assert.match(second.reason, /yard cannot hold/);
+  assert.equal(second.a.overrides.length, 1);
+  assert.equal(second.a.spoilKg, first.a.spoilKg);
+  assert.equal(second.aStocks.batteryKwh, laid.a.batteryKwh);
+});
+
+
 
 
