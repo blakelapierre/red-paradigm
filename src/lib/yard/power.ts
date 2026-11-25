@@ -57,6 +57,14 @@ export type Stocks = {
   cableIx: number;
   cableIy: number;
   cabinO2Kg: bigint;
+  /** 1 once a seed mass has left. Not a sky. */
+  seed: number;
+  /** 1 once this yard's loft is the weather claim. */
+  weather: number;
+  /** ISRU is known at the start. Climate and the seed are not. */
+  techIsru: number;
+  techClimate: number;
+  techSeed: number;
 };
 
 export function createStocks(): Stocks {
@@ -93,6 +101,11 @@ export function createStocks(): Stocks {
     cableIx: 0,
     cableIy: 0,
     cabinO2Kg: 0n,
+    seed: 0,
+    weather: 0,
+    techIsru: 1,
+    techClimate: 0,
+    techSeed: 0,
   };
 }
 
@@ -107,7 +120,7 @@ export function credit(stocks: Stocks, kwh: number): Stocks {
 }
 
 export function stocksBytes(stocks: Stocks): Uint8Array {
-  const bytes = new Uint8Array(172);
+  const bytes = new Uint8Array(192);
   const view = new DataView(bytes.buffer);
   bytes.set([0x50, 0x57, 0x52, 0x31]);
   view.setUint32(4, stocks.batteryKwh);
@@ -152,6 +165,11 @@ export function stocksBytes(stocks: Stocks): Uint8Array {
   view.setUint32(160, stocks.stormHeld >>> 0);
   view.setUint32(164, stocks.stormBroke >>> 0);
   view.setUint32(168, stocks.stormSeen >>> 0);
+  view.setUint32(172, stocks.seed >>> 0);
+  view.setUint32(176, stocks.weather >>> 0);
+  view.setUint32(180, stocks.techIsru >>> 0);
+  view.setUint32(184, stocks.techClimate >>> 0);
+  view.setUint32(188, stocks.techSeed >>> 0);
   return bytes;
 }
 
