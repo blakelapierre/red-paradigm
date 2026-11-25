@@ -9,6 +9,7 @@ import {
   STORM_DURATION,
   STORM_PEAK_TAU_MILLI,
   STORM_SOL,
+  SOLS_PER_YEAR,
   TRIPLE_P_PA,
 } from "../climate/constants.ts";
 import { createWorld } from "../climate/model.ts";
@@ -27,6 +28,7 @@ import { KILOPOWER_KWH } from "./kilopower.ts";
 import { BERM_FINES_KG } from "./berm.ts";
 import { BED_CAP, BED_FINES_KG, RATION_BED_FINES_KG } from "./bed.ts";
 import { HELD_MARK } from "./hold.ts";
+import { TURN_SOLS } from "./year.ts";
 import { LAMP_BED_KWH, LAMP_FINES_KG, LAMP_G } from "./lamp.ts";
 import { CABIN_LEAK_KG, CABIN_M3, CABIN_O2_KG, CABIN_O2_PA, METER_KWH } from "./meter.ts";
 import { FINES_CAP_KG, MILL_FINES_KG, MILL_KWH, MILL_SPOIL_KG, MILL_TAILINGS_KG } from "./mill.ts";
@@ -109,6 +111,15 @@ Both clients take an order, or neither does.`,
     `A clear cradle sol at the start banks ${commas(CLEAR_SOL_KWH)} kWh from the ${commas(ARRAY_M2)} m² array, scaled by panel health. The reactor, if it is on, adds ${commas(KILOPOWER_KWH)} kWh after that. Ten sols is the same close, ten times.`,
     "A sol always closes. It does not refuse.",
     "The air mass is a function of solar longitude only. A sol does not spend it. If standing orders are on, the list runs after the close.",
+  ),
+  note(
+    "year",
+    "Start",
+    "One year",
+    `A year is ${SOLS_PER_YEAR} sols of solar longitude. Ls starts at 240°. It has come back around when the angle traveled is a full turn. That is not an integer count of sols, and it is not ${TURN_SOLS * 24} sols. A turn is ${TURN_SOLS} sols. Twenty-three turns have not come around. Twenty-four turns have gone past, and they are still not a year. One turn on the board banks ${TURN_SOLS} sols.`,
+    "Nothing. The clock does not spend.",
+    "Nothing.",
+    "The board does not call 669 sols a year. A turn does not move a climate cell by itself. The air mass stays on solar longitude.",
   ),
   note(
     "standing",

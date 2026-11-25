@@ -62,5 +62,8 @@ test("the manual quotes the constants, not a second set of numbers", () => {
   const yards = entryByTitle("Two yards");
   assert.match(yards?.does ?? "", /One window is one yard/);
   assert.match(yards?.doesNot ?? "", /not two seats/);
+  const year = entryByTitle("One year");
+  assert.match(year?.does ?? "", /668\.6/);
+  assert.match(year?.doesNot ?? "", /does not call 669/);
   assert.equal(MANUAL.some((entry) => /mars/i.test(`${entry.title} ${entry.does}`)), false);
 });
